@@ -13,6 +13,17 @@ namespace Drupal\flysystem\Plugin;
 interface FlysystemPluginInterface {
 
   /**
+   * Creates a new plugin instance.
+   *
+   * @param array $configuration
+   *   The configuration array.
+   *
+   * @return \Drupal\flysystem\Plugin\FlysystemPluginInterface
+   *   A new plugin.
+   */
+  public static function create(array $configuration);
+
+  /**
    * Returns the Flysystem adapter
    *
    * @return \League\Flysystem\AdapterInterface

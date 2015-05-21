@@ -36,6 +36,8 @@ function flysystem_menu() {
 function flysystem_stream_wrappers() {
   $wrappers = array();
 
+  // Code below stolen from https://www.drupal.org/project/amazons3.
+
   // This hook is called before hook_init(), so we have to manually register
   // the autoloader. We also need to handle module upgrades where
   // composer_manager might not be enabled yet.
@@ -101,19 +103,19 @@ function flysystem_flysystem_plugins() {
  * @param array $configuration
  *   (optional) The plugin configuration array.
  *
- * @return FlysystemPluginInterface|false
+ * @return \Drupal\flysystem\Plugin\FlysystemPluginInterface|false
  *   A flysystem plugin, or false on failure.
  */
 function flysystem_get_plugin($id, array $configuration = array()) {
-  $plugins = _flysystem_get_plugins();
-
-  if (isset($plugins[$id]) && class_exists($plugins[$id]['class'])) {
-    $configuration = drupal_array_merge_deep($plugins[$id]['defaults'], $configuration);
-    return $plugins[$id]['factory']($plugins[$id]['class'], $configuration);
+  if ($definition = flysystem_get_plugin_definition($id)) {
+    $class = $definition['class'];
+    if (class_exists($class)) {
+      return $class::create($configuration);
+    }
   }
 
   // We couldn't find the plugin.
-  watchdog('flysystem', t('Unable to find the plugin: @id', array('@id' => $id)), WATCHDOG_ALERT);
+  watchdog('flysystem', 'Unable to find the plugin: @id', array('@id' => $id), WATCHDOG_ALERT);
 
   // Avoid infinite loop.
   if ($id === 'null') {
@@ -123,33 +125,33 @@ function flysystem_get_plugin($id, array $configuration = array()) {
   return flysystem_get_plugin('null');
 }
 
-function _flysystem_get_plugins() {
-  $plugins =& drupal_static(__FUNCTION__, NULL);
-
-  if (isset($plugins)) {
-    return $plugins;
-  }
-
-  $defaults = array(
-    'defaults' => array(),
-    'factory' => 'flysystem_create_plugin_instance',
-  );
-
-  $plugins = module_invoke_all('flysystem_plugins');
-  foreach (array_keys($plugins) as $id) {
-    $plugins[$id] += $defaults;
-  }
-
-  return $plugins;
+/**
+ * Returns a plugin definition.
+ *
+ * @param string $id
+ *   The plugin id.
+ *
+ * @return array|false
+ *   The plugin definition or false.
+ */
+function flysystem_get_plugin_definition($id) {
+  $plugins = flysystem_get_plugin_definitions();
+  return isset($plugins[$id]) ? $plugins[$id] : FALSE;
 }
 
 /**
- * Default factory for plugins.
+ * Returns the plugin definitions.
  *
- * @return FlysystemPluginInterface
- *   A new Flysystem plugin.
+ * @return array
+ *   The plugin definitions.
  */
-function flysystem_create_plugin_instance($class, array $configuration) {
-  return new $class($configuration);
+function flysystem_get_plugin_definitions() {
+  $plugins =& drupal_static(__FUNCTION__, NULL);
+
+  if (!isset($plugins)) {
+    $plugins = module_invoke_all('flysystem_plugins');
+  }
+
+  return $plugins;
 }
 

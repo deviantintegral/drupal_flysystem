@@ -15,6 +15,13 @@ abstract class FlysystemPluginBase implements FlysystemPluginInterface {
   /**
    * {@inheritdoc}
    */
+  public static function create(array $configuration) {
+    return new static($configuration);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getExternalUrl($uri) {
     list($scheme, $path) = explode('://', $uri, 2);
     $path = str_replace('\\', '/', $path);

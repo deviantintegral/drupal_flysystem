@@ -23,25 +23,43 @@ class Local extends FlysystemPluginBase {
   protected $root;
 
   /**
+   * The base URL.
+   *
+   * @var string
+   */
+  protected $baseUrl;
+
+  /**
+   * The location of the public files directory.
+   *
+   * @var string
+   */
+  protected $basePath;
+
+  /**
    * Whether the root is in the public path.
    *
    * @var bool
    */
-  protected $isPublic;
+  protected $publicPath;
 
   /**
    * Constructs a Local object.
-   *
-   * @param array $configuration
-   *   Plugin configuration array.
    */
-  public function __construct(array $configuration) {
-    $this->root = $configuration['root'];
+  public function __construct($root, $base_url, $base_path) {
+    $this->root = rtrim($root, '\/');
+    $this->baseUrl = $base_url;
+    $this->basePath = $base_path;
 
-    $root = realpath($configuration['root']);
-    $public = realpath($this->basePath());
+    $this->publicPath = $this->pathIsPublic($this->root);
+  }
 
-    $this->isPublic = strpos($root, $public) === 0;
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(array $configuration) {
+    $base_path = variable_get('file_public_path', conf_path() . '/files');
+    return new static($configuration['root'], $GLOBALS['base_url'], $base_path);
   }
 
   /**
@@ -55,24 +73,47 @@ class Local extends FlysystemPluginBase {
    * {@inheritdoc}
    */
   public function getExternalUrl($uri) {
-    if (!$this->isPublic) {
+    if (!$this->publicPath) {
       return parent::getExternalUrl($uri);
     }
 
     list(, $path) = explode('://', $uri, 2);
-    $path = str_replace('\\', '/', $path);
+    $path = str_replace('\\', '/', $this->publicPath . '/' . $path);
 
-    return $GLOBALS['base_url'] . '/' . $this->basePath() . '/' . drupal_encode_path($path);
+    return $this->baseUrl . '/' . drupal_encode_path($path);
   }
 
   /**
-   * Returns the base path for public://.
+   * Determines if the path is inside the public path.
    *
-   * @return string
-   *   The base path for public:// typically sites/default/files.
+   * @param string $root
+   *   The root path.
+   *
+   * @return string|false
+   *   The public path, or false.
    */
-  protected static function basePath() {
-    return variable_get('file_public_path', conf_path() . '/files');
+  protected function pathIsPublic($root) {
+    $public = realpath($this->basePath);
+    $root = realpath($root);
+
+    if ($public === FALSE || $root === FALSE) {
+      return FALSE;
+    }
+
+    // The same directory.
+    if ($public === $root) {
+      return $this->basePath;
+    }
+
+    if (strpos($root, $public) !== 0) {
+      return FALSE;
+    }
+
+    if (($subpath = substr($root, strlen($public))) && $subpath[0] === DIRECTORY_SEPARATOR) {
+      return $this->basePath . '/' . ltrim($subpath, DIRECTORY_SEPARATOR);
+    }
+
+    return FALSE;
   }
 
 }
