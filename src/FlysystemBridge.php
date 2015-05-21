@@ -7,6 +7,7 @@
 
 namespace Drupal\flysystem;
 
+use Drupal\flysystem\DrupalFlysystemCache;
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Adapter\NullAdapter;
 use League\Flysystem\Cached\CachedAdapter;
@@ -180,7 +181,7 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
     }
 
     if ($settings['cache']) {
-      $adapter = new CachedAdapter($adapter, \Drupal::service('flysystem_cache'));
+      $adapter = new CachedAdapter($adapter, new DrupalFlysystemCache('flysystem:' . $scheme));
     }
 
     return $adapter;

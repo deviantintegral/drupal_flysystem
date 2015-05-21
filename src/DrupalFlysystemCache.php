@@ -19,7 +19,17 @@ class DrupalFlysystemCache extends AbstractCache {
    *
    * @var string
    */
-  protected $key = 'flysystem';
+  protected $key;
+
+  /**
+   * Constructs a DrupalFlysystemCache object.
+   *
+   * @param string $key
+   *   The cache key to use.
+   */
+  public function __construct($key) {
+    $this->key = $key;
+  }
 
   /**
    * {@inheritdoc}
