@@ -1,7 +1,13 @@
 <?php
 
-namespace Drupal\flysystem\Plugin;
+/**
+ * @file
+ * Contains FlysystemPluginInterface.
+ */
 
+/**
+ * Interface Flysystem plugins must implement.
+ */
 interface FlysystemPluginInterface {
 
   /**

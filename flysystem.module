@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * @file
+ * Provides access to various filesystem backends using Flysystem.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function flysystem_menu() {
+  $items = array();
+
+  $items['_flysystem/%'] = array(
+    'title' => 'Flysystem file download',
+    'page callback' => 'file_download',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['_flysystem/styles/%image_style'] = array(
+    'title' => 'Generate image style',
+    'page callback' => 'image_style_deliver',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function flysystem_ctools_plugin_type() {
+  return array(
+    'plugins' => array(
+      'cache' => TRUE,
+      'use hooks' => FALSE,
+      'classes' => array('handler'),
+      'defaults' => array(
+        'factory' => 'flysystem_create_plugin_instance',
+        'defaults' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function flysystem_ctools_plugin_directory($module, $plugin) {
+  if ($module === 'flysystem') {
+    return 'plugins';
+  }
+}
+
+/**
+ * Returns a plugin instance.
+ *
+ * @param string $id
+ *   The plugin id.
+ * @param array $configuration
+ *   (optional) The plugin configuration array.
+ *
+ * @return FlysystemPluginInterface|false
+ *   A flysystem plugin, or false on failure.
+ */
+function flysystem_get_plugin($id, array $configuration = array()) {
+  ctools_include('plugins');
+
+  if ($definition = ctools_get_plugins('flysystem', 'plugins', $id)) {
+    return $definition['factory']($id, $definition, $configuration);
+  }
+
+  // Avoid infinite loop.
+  if ($id === 'null') {
+    return FALSE;
+  }
+
+  return flysystem_get_plugin('null');
+}
+
+/**
+ * Default factory for plugins.
+ *
+ * @return FlysystemPluginInterface
+ *   A new Flysystem plugin.
+ */
+function flysystem_create_plugin_instance($id, array $definition, array $configuration) {
+  $configuration = drupal_array_merge_deep($configuration, $definition['defaults']);
+
+  if ($class = ctools_plugin_get_class($definition, 'handler')) {
+    return new $class($configuration);
+  }
+
+  return FALSE;
+}
+

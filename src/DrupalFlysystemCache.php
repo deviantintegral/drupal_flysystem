@@ -2,11 +2,9 @@
 
 /**
  * @file
- * Contains \Drupal\flysystem\DrupalFlysystemCache.
+ * Contains DrupalFlysystemCache.
  */
-namespace Drupal\flysystem;
 
-use Drupal\Core\Cache\CacheBackendInterface;
 use League\Flysystem\Cached\Storage\AbstractCache;
 
 /**
@@ -15,37 +13,17 @@ use League\Flysystem\Cached\Storage\AbstractCache;
 class DrupalFlysystemCache extends AbstractCache {
 
   /**
-   * The cache backend.
-   *
-   * @var \Drupal\Core\Cache\CacheBackendInterface
-   */
-  protected $cacheBackend;
-
-  /**
    * The cache key.
    *
    * @var string
    */
-  protected $key;
-
-  /**
-   * Constructs a DrupalFlysystemCache object.
-   *
-   * @param \Drupal\Core\Cache\CacheBackendInterface $cache
-   *   The cache backend.
-   * @param string $key
-   *   The cache key.
-   */
-  public function __construct(CacheBackendInterface $cache, $key) {
-    $this->cacheBackend = $cache;
-    $this->key = $key;
-  }
+  protected $key = 'flysystem';
 
   /**
    * {@inheritdoc}
    */
   public function load() {
-    if ($cache = $this->cacheBackend->get($this->key)) {
+    if ($cache = cache_get($this->key)) {
       $this->cache = $cache->data[0];
       $this->complete = $cache->data[1];
     }
@@ -56,7 +34,7 @@ class DrupalFlysystemCache extends AbstractCache {
    */
   public function save() {
     $cleaned = $this->cleanContents($this->cache);
-    $this->cacheBackend->set($this->key, [$cleaned, $this->complete]);
+    cache_set($this->key, [$cleaned, $this->complete]);
   }
 
 }

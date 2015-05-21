@@ -2,15 +2,9 @@
 
 /**
  * @file
- * Contains \Drupal\flysystem\FlysystemBridge.
+ * Contains FlysystemBridge.
  */
 
-namespace Drupal\flysystem;
-
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Core\Routing\UrlGeneratorTrait;
-use Drupal\Core\Site\Settings;
-use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Adapter\NullAdapter;
 use League\Flysystem\Cached\CachedAdapter;
@@ -22,9 +16,7 @@ use Twistor\FlysystemStreamWrapper;
 /**
  * An adapter for Flysystem to StreamWrapperInterface.
  */
-class FlysystemBridge extends FlysystemStreamWrapper implements StreamWrapperInterface {
-
-  use UrlGeneratorTrait;
+class FlysystemBridge extends FlysystemStreamWrapper implements DrupalStreamWrapperInterface {
 
   /**
    * A static class for plugins.
@@ -32,27 +24,6 @@ class FlysystemBridge extends FlysystemStreamWrapper implements StreamWrapperInt
    * @var array
    */
   protected static $plugins = [];
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getType() {
-    return StreamWrapperInterface::WRITE_VISIBLE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getName() {
-    return t('Flysystem: @scheme', ['@scheme' => $this->getProtocol()]);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getDescription() {
-    return t('Flysystem: @scheme', ['@scheme' => $this->getProtocol()]);
-  }
 
   /**
    * {@inheritdoc}
@@ -73,6 +44,20 @@ class FlysystemBridge extends FlysystemStreamWrapper implements StreamWrapperInt
    */
   public function getExternalUrl() {
     return $this->getPluginFormScheme($this->getProtocol())->getExternalUrl($this->uri);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getMimeType($uri, $mapping = NULL) {
+
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function chmod($mode){
+    return TRUE;
   }
 
   /**
@@ -116,7 +101,7 @@ class FlysystemBridge extends FlysystemStreamWrapper implements StreamWrapperInt
    *   The settings array from settings.php.
    */
   protected static function getSettingsForScheme($scheme) {
-    $schemes = Settings::get('flysystem', []);
+    $schemes = variable_get('flysystem', []);
 
     $settings = isset($schemes[$scheme]) ? $schemes[$scheme] : [];
 

@@ -2,25 +2,15 @@
 
 /**
  * @file
- * Contains \Drupal\flysystem\Flysystem\Local.
+ * Contains FlysystemLocal.
  */
 
-namespace Drupal\flysystem\Flysystem;
-
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Core\Site\Settings;
-use Drupal\flysystem\Plugin\FlysystemPluginInterface;
-use Drupal\flysystem\Plugin\FlysystemUrlTrait;
 use League\Flysystem\Adapter\Local as LocalAdapter;
 
 /**
  * Drupal plugin for the "Local" Flysystem adapter.
- *
- * @Adapter(id = "local")
  */
-class Local implements FlysystemPluginInterface {
-
-  use FlysystemUrlTrait;
+class FlysystemLocal extends FlysystemPluginBase {
 
   /**
    * The root of the local adapter.
@@ -48,7 +38,7 @@ class Local implements FlysystemPluginInterface {
     $root = realpath($configuration['root']);
     $public = realpath($this->basePath());
 
-    $this->isPublic = strpos($public, $root) === 0;
+    $this->isPublic = strpos($root, $public) === 0;
   }
 
   /**
@@ -69,7 +59,7 @@ class Local implements FlysystemPluginInterface {
     list(, $path) = explode('://', $uri, 2);
     $path = str_replace('\\', '/', $path);
 
-    return $GLOBALS['base_url'] . '/' . $this->basePath() . '/' . UrlHelper::encodePath($path);
+    return $GLOBALS['base_url'] . '/' . $this->basePath() . '/' . drupal_encode_path($path);
   }
 
   /**
@@ -79,7 +69,7 @@ class Local implements FlysystemPluginInterface {
    *   The base path for public:// typically sites/default/files.
    */
   protected static function basePath() {
-    return Settings::get('file_public_path', conf_path() . '/files');
+    return variable_get('file_public_path', conf_path() . '/files');
   }
 
 }

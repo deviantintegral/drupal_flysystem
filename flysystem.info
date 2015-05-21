@@ -1,0 +1,13 @@
+name = Flysystem
+description = Provides access to various filesystem backends using Flysystem.
+package = Flysystem
+core = 7.x
+php = 5.4
+
+dependencies[] = composer_manager
+dependencies[] = ctools
+
+files[] = src/DrupalFlysystemCache.php
+files[] = src/FlysystemBridge.php
+files[] = src/Plugin/FlysystemPluginInterface.php
+files[] = src/Plugin/FlysystemPluginBase.php
