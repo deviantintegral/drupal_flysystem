@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\flysystem\FlysystemBridge;
+
 /**
  * @file
  * Provides access to various filesystem backends using Flysystem.
@@ -28,6 +30,31 @@ function flysystem_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_file_download().
+ */
+function flysystem_file_download($uri) {
+  if (!$scheme = file_uri_scheme($uri)) {
+    return;
+  }
+
+  $schemes = variable_get('flysystem', array());
+
+  if (!isset($schemes[$scheme])) {
+    return;
+  }
+
+  // Use Filesystem::getSize() directly because filesize isn't always returned
+  // from getMetadata().
+  $filesystem = FlysystemBridge::getFilesystemForScheme($scheme);
+
+  return array(
+    'Content-Type' => file_get_mimetype($uri),
+    'Content-Length' => $filesystem->getSize(file_uri_target($uri)),
+    'Cache-Control' => 'private',
+  );
 }
 
 /**
