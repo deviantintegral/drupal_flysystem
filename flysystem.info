@@ -6,8 +6,3 @@ php = 5.4
 
 dependencies[] = composer_manager
 dependencies[] = ctools
-
-files[] = src/DrupalFlysystemCache.php
-files[] = src/FlysystemBridge.php
-files[] = src/Plugin/FlysystemPluginInterface.php
-files[] = src/Plugin/FlysystemPluginBase.php

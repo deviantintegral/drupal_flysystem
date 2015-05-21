@@ -2,15 +2,18 @@
 
 /**
  * @file
- * Contains FlysystemLocal.
+ * Contains \Drupal\flysystem\Flysystem\Local.
  */
 
+namespace Drupal\flysystem\Flysystem;
+
+use Drupal\flysystem\Plugin\FlysystemPluginBase;
 use League\Flysystem\Adapter\Local as LocalAdapter;
 
 /**
  * Drupal plugin for the "Local" Flysystem adapter.
  */
-class FlysystemLocal extends FlysystemPluginBase {
+class Local extends FlysystemPluginBase {
 
   /**
    * The root of the local adapter.

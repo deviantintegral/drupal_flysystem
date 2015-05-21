@@ -19,7 +19,7 @@ function flysystem_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['_flysystem/styles/%image_style'] = array(
+  $items['_flysystem/%/styles/%image_style'] = array(
     'title' => 'Generate image style',
     'page callback' => 'image_style_deliver',
     'page arguments' => array(3),
@@ -31,29 +31,66 @@ function flysystem_menu() {
 }
 
 /**
- * Implements hook_ctools_plugin_type().
+ * Implements hook_stream_wrappers().
  */
-function flysystem_ctools_plugin_type() {
-  return array(
-    'plugins' => array(
-      'cache' => TRUE,
-      'use hooks' => FALSE,
-      'classes' => array('handler'),
-      'defaults' => array(
-        'factory' => 'flysystem_create_plugin_instance',
-        'defaults' => array(),
-      ),
-    ),
-  );
+function flysystem_stream_wrappers() {
+  $wrappers = array();
+
+  // This hook is called before hook_init(), so we have to manually register
+  // the autoloader. We also need to handle module upgrades where
+  // composer_manager might not be enabled yet.
+  if (!module_exists('composer_manager')) {
+    return $wrappers;
+  }
+
+  // If the module has been enabled, but the user didn't update composer
+  // libraries, prevent failing entirely.
+  try {
+    composer_manager_register_autoloader();
+  }
+  catch (\RuntimeException $e) {
+    watchdog('flysystem', 'The Composer autoloader could not be registered. Run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
+    watchdog_exception('flysystem', $e);
+    return $wrappers;
+  }
+
+  if (!class_exists('Drupal\flysystem\FlysystemBridge')) {
+    watchdog('flysystem', 'The Flysystem StreamWrapper class is missing. Make sure all module updates have run. Otherwise, run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
+    return $wrappers;
+  }
+
+  $schemes = variable_get('flysystem', array());
+
+  foreach (array_keys($schemes) as $scheme) {
+    $wrappers[$scheme] = array(
+      'name' => t('Flysystem: @scheme', array('@scheme' => $scheme)),
+      'class' => 'Drupal\flysystem\FlysystemBridge',
+      'description' => t('Flysystem: @scheme', array('@scheme' => $scheme)),
+      'type' => STREAM_WRAPPERS_WRITE_VISIBLE,
+    );
+  }
+
+  return $wrappers;
 }
 
 /**
- * Implements hook_ctools_plugin_directory().
+ * Implements hook_flysystem_plugins().
  */
-function flysystem_ctools_plugin_directory($module, $plugin) {
-  if ($module === 'flysystem') {
-    return 'plugins';
+function flysystem_flysystem_plugins() {
+  $plugins = array(
+    'null' => array(
+      'class' => 'Drupal\flysystem\Flysystem\Null',
+    ),
+    'local' => array(
+      'class' => 'Drupal\flysystem\Flysystem\Local',
+    ),
+  );
+
+  if (extension_loaded('ftp')) {
+    $plugins['ftp']['class'] = 'Drupal\flysystem\Flysystem\Ftp';
   }
+
+  return $plugins;
 }
 
 /**
@@ -68,11 +105,15 @@ function flysystem_ctools_plugin_directory($module, $plugin) {
  *   A flysystem plugin, or false on failure.
  */
 function flysystem_get_plugin($id, array $configuration = array()) {
-  ctools_include('plugins');
+  $plugins = _flysystem_get_plugins();
 
-  if ($definition = ctools_get_plugins('flysystem', 'plugins', $id)) {
-    return $definition['factory']($id, $definition, $configuration);
+  if (isset($plugins[$id]) && class_exists($plugins[$id]['class'])) {
+    $configuration = drupal_array_merge_deep($plugins[$id]['defaults'], $configuration);
+    return $plugins[$id]['factory']($plugins[$id]['class'], $configuration);
   }
+
+  // We couldn't find the plugin.
+  watchdog('flysystem', t('Unable to find the plugin: @id', array('@id' => $id)), WATCHDOG_ALERT);
 
   // Avoid infinite loop.
   if ($id === 'null') {
@@ -82,19 +123,33 @@ function flysystem_get_plugin($id, array $configuration = array()) {
   return flysystem_get_plugin('null');
 }
 
+function _flysystem_get_plugins() {
+  $plugins =& drupal_static(__FUNCTION__, NULL);
+
+  if (isset($plugins)) {
+    return $plugins;
+  }
+
+  $defaults = array(
+    'defaults' => array(),
+    'factory' => 'flysystem_create_plugin_instance',
+  );
+
+  $plugins = module_invoke_all('flysystem_plugins');
+  foreach (array_keys($plugins) as $id) {
+    $plugins[$id] += $defaults;
+  }
+
+  return $plugins;
+}
+
 /**
  * Default factory for plugins.
  *
  * @return FlysystemPluginInterface
  *   A new Flysystem plugin.
  */
-function flysystem_create_plugin_instance($id, array $definition, array $configuration) {
-  $configuration = drupal_array_merge_deep($configuration, $definition['defaults']);
-
-  if ($class = ctools_plugin_get_class($definition, 'handler')) {
-    return new $class($configuration);
-  }
-
-  return FALSE;
+function flysystem_create_plugin_instance($class, array $configuration) {
+  return new $class($configuration);
 }
 

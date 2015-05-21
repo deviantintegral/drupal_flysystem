@@ -5,6 +5,8 @@
  * Contains DrupalFlysystemCache.
  */
 
+namespace Drupal\flysystem;
+
 use League\Flysystem\Cached\Storage\AbstractCache;
 
 /**

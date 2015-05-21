@@ -2,8 +2,10 @@
 
 /**
  * @file
- * Contains FlysystemBridge.
+ * Contains \Drupal\flysystem\FlysystemBridge.
  */
+
+namespace Drupal\flysystem;
 
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Adapter\NullAdapter;
@@ -14,9 +16,9 @@ use League\Flysystem\Replicate\ReplicateAdapter;
 use Twistor\FlysystemStreamWrapper;
 
 /**
- * An adapter for Flysystem to StreamWrapperInterface.
+ * An adapter for Flysystem to \DrupalStreamWrapperInterface.
  */
-class FlysystemBridge extends FlysystemStreamWrapper implements DrupalStreamWrapperInterface {
+class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWrapperInterface {
 
   /**
    * A static class for plugins.
@@ -128,8 +130,7 @@ class FlysystemBridge extends FlysystemStreamWrapper implements DrupalStreamWrap
     }
 
     $settings = static::getSettingsForScheme($scheme);
-
-    $plugin = \Drupal::service('plugin.manager.flysystem')->createInstance($settings['type'], $settings['config']);
+    $plugin = flysystem_get_plugin($settings['type'], $settings['config']);
     static::$plugins[$scheme] = $plugin;
 
     return $plugin;

@@ -2,15 +2,18 @@
 
 /**
  * @file
- * Contains FlysystemFtp.
+ * Contains \Drupal\flysystem\Flysystem\Ftp.
  */
 
+namespace Drupal\flysystem\Flysystem;
+
+use Drupal\flysystem\Plugin\FlysystemPluginBase;
 use League\Flysystem\Adapter\Ftp as FtpAdapter;
 
 /**
  * Drupal plugin for the "FTP" Flysystem adapter.
  */
-class FlysystemFtp extends FlysystemPluginBase {
+class Ftp extends FlysystemPluginBase {
 
   /**
    * Plugin configuration.

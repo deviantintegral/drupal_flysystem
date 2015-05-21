@@ -5,6 +5,8 @@
  * Contains FlysystemPluginBase.
  */
 
+namespace Drupal\flysystem\Plugin;
+
 /**
  * Base class for plugins.
  */

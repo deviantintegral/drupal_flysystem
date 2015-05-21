@@ -5,6 +5,8 @@
  * Contains FlysystemPluginInterface.
  */
 
+namespace Drupal\flysystem\Plugin;
+
 /**
  * Interface Flysystem plugins must implement.
  */
