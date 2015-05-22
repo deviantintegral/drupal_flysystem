@@ -7,32 +7,33 @@
 
 namespace Drupal\flysystem\Tests;
 
-use Drupal\simpletest\WebTestBase;
-
 /**
  * Tests module installation and uninstallation.
- *
- * @group Flysystem
  */
-class ModuleInstallUninstallWebTest extends WebTestBase {
+class ModuleInstallUninstallWebTest extends \DrupalWebTestCase {
 
-  /**
-   * {@inheritdoc}
-   */
-  public static $modules = array('flysystem');
+  public static function getInfo() {
+    return array(
+      'name' => 'Install/uninstall',
+      'description' => 'Tests that the module installs and uninstalls.',
+      'group' => 'Flysystem',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('flysystem'));
+  }
 
   /**
    * Tests installation and uninstallation.
    */
   protected function testInstallationAndUninstallation() {
-    $module_handler = \Drupal::moduleHandler();
-    $this->assertTrue($module_handler->moduleExists(reset(static::$modules)));
+    $this->assertTrue(module_exists('flysystem'));
 
-    /** @var \Drupal\Core\Extension\ModuleInstallerInterface $module_installer */
-    $module_installer = \Drupal::service('module_installer');
+    module_disable(array('flysystem'));
+    $this->assertFalse(module_exists('flysystem'));
 
-    $module_installer->uninstall(static::$modules);
-    $this->assertFalse($module_handler->moduleExists(reset(static::$modules)));
+    $this->assertTrue(drupal_uninstall_modules(array('flysystem')));
   }
 
 }
