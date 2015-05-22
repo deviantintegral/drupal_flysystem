@@ -59,6 +59,7 @@ class Local extends FlysystemPluginBase {
    */
   public static function create(array $configuration) {
     $base_path = variable_get('file_public_path', conf_path() . '/files');
+
     return new static($configuration['root'], $GLOBALS['base_url'], $base_path);
   }
 

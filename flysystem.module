@@ -53,7 +53,6 @@ function flysystem_file_download($uri) {
   return array(
     'Content-Type' => file_get_mimetype($uri),
     'Content-Length' => $filesystem->getSize(file_uri_target($uri)),
-    'Cache-Control' => 'private',
   );
 }
 

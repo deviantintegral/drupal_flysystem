@@ -19,7 +19,7 @@ class ModuleInstallUninstallWebTest extends WebTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['flysystem'];
+  public static $modules = array('flysystem');
 
   /**
    * Tests installation and uninstallation.

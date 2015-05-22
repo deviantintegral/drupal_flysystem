@@ -26,7 +26,7 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
    *
    * @var array
    */
-  protected static $plugins = [];
+  protected static $plugins = array();
 
   /**
    * {@inheritdoc}
@@ -59,8 +59,8 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
   /**
    * {@inheritdoc}
    */
-  public function chmod($mode){
-    return TRUE;
+  public function chmod($mode) {
+    return $this->stream_metadata($this->uri, STREAM_META_ACCESS, $mode);
   }
 
   /**
@@ -104,16 +104,16 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
    *   The settings array from settings.php.
    */
   protected static function getSettingsForScheme($scheme) {
-    $schemes = variable_get('flysystem', []);
+    $schemes = variable_get('flysystem', array());
 
-    $settings = isset($schemes[$scheme]) ? $schemes[$scheme] : [];
+    $settings = isset($schemes[$scheme]) ? $schemes[$scheme] : array();
 
-    return $settings += [
+    return $settings += array(
       'type' => '',
-      'config' => [],
+      'config' => array(),
       'replicate' => FALSE,
       'cache' => FALSE,
-    ];
+    );
   }
 
   /**
