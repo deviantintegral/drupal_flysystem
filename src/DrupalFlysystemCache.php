@@ -46,7 +46,7 @@ class DrupalFlysystemCache extends AbstractCache {
    */
   public function save() {
     $cleaned = $this->cleanContents($this->cache);
-    cache_set($this->key, [$cleaned, $this->complete]);
+    cache_set($this->key, array($cleaned, $this->complete));
   }
 
 }
