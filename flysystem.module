@@ -1,11 +1,11 @@
 <?php
 
-use Drupal\flysystem\FlysystemBridge;
-
 /**
  * @file
  * Provides access to various filesystem backends using Flysystem.
  */
+
+use Drupal\flysystem\FlysystemFactory;
 
 /**
  * Implements hook_menu().
@@ -29,6 +29,23 @@ function flysystem_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['admin/config/media/file-system/settings'] = array(
+    'title' => 'Settings',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/config/media/file-system/flysystem'] = array(
+    'title' => 'Flysystem',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flysystem_config_form'),
+    'access arguments' => array('administer flysystem'),
+    'file' => 'flysystem.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'tab_parent' => 'admin/config/media/file-system',
+  );
+
   return $items;
 }
 
@@ -36,19 +53,16 @@ function flysystem_menu() {
  * Implements hook_file_download().
  */
 function flysystem_file_download($uri) {
-  if (!$scheme = file_uri_scheme($uri)) {
-    return;
-  }
-
+  $scheme = file_uri_scheme($uri);
   $schemes = variable_get('flysystem', array());
 
-  if (!isset($schemes[$scheme])) {
+  if (!$scheme || !isset($schemes[$scheme])) {
     return;
   }
 
   // Use Filesystem::getSize() directly because filesize isn't always returned
   // from getMetadata().
-  $filesystem = FlysystemBridge::getFilesystemForScheme($scheme);
+  $filesystem = flysystem_factory()->getFilesystem($scheme);
 
   return array(
     'Content-Type' => file_get_mimetype($uri),
@@ -76,7 +90,7 @@ function flysystem_stream_wrappers() {
   try {
     composer_manager_register_autoloader();
   }
-  catch (\RuntimeException $e) {
+  catch (RuntimeException $e) {
     watchdog('flysystem', 'The Composer autoloader could not be registered. Run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
     watchdog_exception('flysystem', $e);
     return $wrappers;
@@ -172,12 +186,28 @@ function flysystem_get_plugin_definition($id) {
  *   The plugin definitions.
  */
 function flysystem_get_plugin_definitions() {
-  $plugins =& drupal_static(__FUNCTION__, NULL);
+  $plugins = &drupal_static(__FUNCTION__, NULL);
 
   if (!isset($plugins)) {
     $plugins = module_invoke_all('flysystem_plugins');
   }
 
   return $plugins;
+}
+
+/**
+ * Returns the Flysystem factory.
+ *
+ * @return \Drupal\flysystem\FlysystemFactory
+ *   Returns the Flysystem factory.
+ */
+function flysystem_factory() {
+  $factory = &drupal_static(__FUNCTION__, NULL);
+
+  if (!isset($factory)) {
+    $factory = new FlysystemFactory();
+  }
+
+  return $factory;
 }
 
