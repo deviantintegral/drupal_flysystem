@@ -8,12 +8,12 @@
 namespace Drupal\flysystem\Flysystem;
 
 use Drupal\flysystem\Flysystem\Adapter\MissingAdapter;
-use Drupal\flysystem\Plugin\FlysystemPluginInterface;
+use Drupal\flysystem\Plugin\FlysystemPluginBase;
 
 /**
  * Drupal plugin for the "MissingAdapter" Flysystem adapter.
  */
-class Missing Implements FlysystemPluginInterface {
+class Missing extends FlysystemPluginBase {
 
   /**
    * {@inheritdoc}
@@ -33,11 +33,11 @@ class Missing Implements FlysystemPluginInterface {
    * {@inheritdoc}
    */
   public function ensure($force = FALSE) {
-    return array(
+    return array(array(
       'severity' => WATCHDOG_ERROR,
       'message' => 'The Flysystem driver is missing.',
       'context' => array(),
-    );
+    ));
   }
 
 }
