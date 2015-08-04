@@ -71,12 +71,18 @@ function flysystem_config_form_submit(array &$form, array &$form_state) {
     'init_message' => t('Starting file system synchronization.'),
     'progress_message' => t('Completed @current step of @total.'),
     'error_message' => t('File system synchronization has encountered an error.'),
+    'file' => drupal_get_path('module', 'flysystem') . '/flysystem.admin.inc',
   );
 
   // @todo We shouldn't do all files in one go, but rather add files and
   // directories and recurse in a batch callback.
   foreach (array_diff($from_files, $to_files) as $filepath) {
     $batch['operations'][] = array('_flysystem_config_form_copy_file', array($scheme_from, $scheme_to, $filepath));
+  }
+
+  if (empty($batch['operations'])) {
+    drupal_set_message(t('There are no files to copy.'), 'warning');
+    return;
   }
 
   batch_set($batch);
