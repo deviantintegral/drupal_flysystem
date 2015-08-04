@@ -7,26 +7,13 @@
 
 namespace Drupal\flysystem;
 
-use Drupal\flysystem\DrupalFlysystemCache;
-use League\Flysystem\Adapter\Local;
-use League\Flysystem\Adapter\NullAdapter;
-use League\Flysystem\Cached\CachedAdapter;
-use League\Flysystem\Filesystem;
-use League\Flysystem\FilesystemInterface;
-use League\Flysystem\Replicate\ReplicateAdapter;
+use League\Flysystem\Util;
 use Twistor\FlysystemStreamWrapper;
 
 /**
  * An adapter for Flysystem to \DrupalStreamWrapperInterface.
  */
 class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWrapperInterface {
-
-  /**
-   * A static class for plugins.
-   *
-   * @var array
-   */
-  protected static $plugins = array();
 
   /**
    * {@inheritdoc}
@@ -46,7 +33,9 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
    * {@inheritdoc}
    */
   public function getExternalUrl() {
-    return $this->getPluginFormScheme($this->getProtocol())->getExternalUrl($this->uri);
+    return flysystem_factory()
+      ->getPlugin($this->getProtocol())
+      ->getExternalUrl($this->uri);
   }
 
   /**
@@ -79,87 +68,8 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
     }
 
     list($scheme, $target) = explode('://', $uri, 2);
-    // If there's no scheme, assume a regular directory path.
-    if (!isset($target)) {
-      $target = $scheme;
-      $scheme = NULL;
-    }
 
-    $dirname = ltrim(dirname($target), '\/');
-
-    if ($dirname === '.') {
-      $dirname = '';
-    }
-
-    return isset($scheme) ? $scheme . '://' . $dirname : $dirname;
-  }
-
-  /**
-   * Finds the settings for a given scheme.
-   *
-   * @param string $scheme
-   *   The scheme.
-   *
-   * @return array
-   *   The settings array from settings.php.
-   */
-  protected static function getSettingsForScheme($scheme) {
-    $schemes = variable_get('flysystem', array());
-
-    $settings = isset($schemes[$scheme]) ? $schemes[$scheme] : array();
-
-    return $settings += array(
-      'type' => '',
-      'config' => array(),
-      'replicate' => FALSE,
-      'cache' => FALSE,
-    );
-  }
-
-  /**
-   * Returns the plugin for a given scheme.
-   *
-   * @param string $scheme
-   *   The scheme.
-   *
-   * @return \Drupal\flysystem\Plugin\FlysystemPluginInterface
-   *   The plugin for the scheme.
-   */
-  protected static function getPluginFormScheme($scheme) {
-    if (isset(static::$plugins[$scheme])) {
-      return static::$plugins[$scheme];
-    }
-
-    $settings = static::getSettingsForScheme($scheme);
-    $plugin = flysystem_get_plugin($settings['type'], $settings['config']);
-    static::$plugins[$scheme] = $plugin;
-
-    return $plugin;
-  }
-
-  /**
-   * Returns the adapter for the current scheme.
-   *
-   * @param string $scheme
-   *   The scheme to find an adapter for.
-   *
-   * @return \League\Flysystem\AdapterInterface
-   *   The correct adapter from settings.
-   */
-  protected static function getAdapterForScheme($scheme) {
-    $settings = static::getSettingsForScheme($scheme);
-    $adapter = static::getPluginFormScheme($scheme)->getAdapter();
-
-    if ($settings['replicate']) {
-      $replica = static::getAdapterForScheme($settings['replicate']);
-      $adapter = new ReplicateAdapter($adapter, $replica);
-    }
-
-    if ($settings['cache']) {
-      $adapter = new CachedAdapter($adapter, new DrupalFlysystemCache('flysystem:' . $scheme));
-    }
-
-    return $adapter;
+    return $scheme . '://' . ltrim(Util::dirname($target), '\/');
   }
 
   /**
@@ -171,11 +81,12 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
    * @return \League\Flysystem\FilesystemInterface
    *   The filesystem for the scheme.
    */
-  public static function getFilesystemForScheme($scheme) {
+  protected function getFilesystemForScheme($scheme) {
     if (!isset(static::$filesystems[$scheme])) {
-      $filesystem = new Filesystem(static::getAdapterForScheme($scheme));
-      static::registerPlugins($filesystem);
-      static::$filesystems[$scheme] = $filesystem;
+      static::$filesystems[$scheme] = flysystem_factory()->getFilesystem($scheme);
+      static::$config[$scheme] = static::$defaultConfiguration;
+      static::$config[$scheme]['permissions']['dir']['public'] = 0777;
+      static::registerPlugins($scheme, static::$filesystems[$scheme]);
     }
 
     return static::$filesystems[$scheme];
@@ -190,18 +101,6 @@ class FlysystemBridge extends FlysystemStreamWrapper implements \DrupalStreamWra
     }
 
     return $this->filesystem;
-  }
-
-  /**
-   * Sets the filesystem.
-   *
-   * @param \League\Flysystem\FilesystemInterface $filesystem
-   *   The filesystem.
-   *
-   * @internal Only used during tests.
-   */
-  public function setFileSystem(FilesystemInterface $filesystem) {
-    $this->filesystem = $filesystem;
   }
 
 }
