@@ -8,9 +8,9 @@
 namespace Drupal\flysystem;
 
 use Drupal\flysystem\DrupalFlysystemCache;
+use Drupal\flysystem\Flysystem\Adapter\ReplicateAdapter;
 use League\Flysystem\Cached\CachedAdapter;
 use League\Flysystem\Filesystem;
-use League\Flysystem\Replicate\ReplicateAdapter;
 
 /**
  * A factory for Flysystem filesystems.
