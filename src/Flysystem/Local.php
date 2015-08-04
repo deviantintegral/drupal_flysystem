@@ -144,6 +144,16 @@ class Local extends FlysystemPluginBase {
   }
 
   /**
+   * Returns the public path of the adapter, if present.
+   *
+   * @return string|false
+   *   The public path, or false.
+   */
+  public function getPublicPath() {
+    return $this->publicPath;
+  }
+
+  /**
    * Checks that the directory exists and is readable.
    *
    * This will attempt to create the directory if it doesn't exist.

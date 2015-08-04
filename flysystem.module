@@ -6,6 +6,7 @@
  */
 
 use Drupal\flysystem\FlysystemFactory;
+use Drupal\flysystem\Flysystem\Local;
 
 /**
  * Implements hook_menu().
@@ -17,14 +18,6 @@ function flysystem_menu() {
     'title' => 'Flysystem file download',
     'page callback' => 'file_download',
     'page arguments' => array(1),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
-
-  $items['_flysystem/%/styles/%image_style'] = array(
-    'title' => 'Generate image style',
-    'page callback' => 'image_style_deliver',
-    'page arguments' => array(3),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -43,8 +36,31 @@ function flysystem_menu() {
     'access arguments' => array('administer flysystem'),
     'file' => 'flysystem.admin.inc',
     'type' => MENU_LOCAL_TASK,
-    'tab_parent' => 'admin/config/media/file-system',
   );
+
+  if (module_exists('image')) {
+    $items['_flysystem/%/styles/%image_style'] = array(
+      'title' => 'Generate image style',
+      'page callback' => 'image_style_deliver',
+      'page arguments' => array(3),
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+
+    foreach (variable_get('flysystem', array()) as $scheme => $conf) {
+      $plugin = flysystem_factory()->getPlugin($scheme);
+
+      if ($plugin instanceof Local && $public_path = $plugin->getPublicPath()) {
+        $items[$public_path . '/styles/%image_style'] = array(
+          'title' => 'Generate image style',
+          'page callback' => 'image_style_deliver',
+          'page arguments' => array(count(explode('/', $public_path)) + 1),
+          'access callback' => TRUE,
+          'type' => MENU_CALLBACK,
+        );
+      }
+    }
+  }
 
   return $items;
 }
@@ -101,7 +117,7 @@ function flysystem_stream_wrappers() {
     return $wrappers;
   }
 
-  if (!class_exists('Drupal\flysystem\FlysystemBridge')) {
+  if (!class_exists('Twistor\FlysystemStreamWrapper')) {
     watchdog('flysystem', 'The Flysystem StreamWrapper class is missing. Make sure all module updates have run. Otherwise, run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
     return $wrappers;
   }

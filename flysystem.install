@@ -29,13 +29,6 @@ function flysystem_requirements($phase) {
 }
 
 /**
- * Implements hook_enable().
- */
-function flysystem_enable() {
-  flysystem_factory()->ensure(TRUE);
-}
-
-/**
  * Converts from watchdog to hook_requirements values.
  *
  * @param int $severity
