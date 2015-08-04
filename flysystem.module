@@ -67,8 +67,6 @@ function flysystem_file_download($uri) {
     return;
   }
 
-  // Use Filesystem::getSize() directly because filesize isn't always returned
-  // from getMetadata().
   $filesystem = flysystem_factory()->getFilesystem($scheme);
 
   return array(
@@ -108,9 +106,7 @@ function flysystem_stream_wrappers() {
     return $wrappers;
   }
 
-  $schemes = variable_get('flysystem', array());
-
-  foreach (array_keys($schemes) as $scheme) {
+  foreach (variable_get('flysystem', array()) as $scheme => $settings) {
     $wrappers[$scheme] = array(
       'name' => t('Flysystem: @scheme', array('@scheme' => $scheme)),
       'class' => 'Drupal\flysystem\FlysystemBridge',
@@ -212,7 +208,7 @@ function flysystem_factory() {
   $factory = &drupal_static(__FUNCTION__, NULL);
 
   if (!isset($factory)) {
-    $factory = new FlysystemFactory();
+    $factory = new FlysystemFactory(variable_get('flysystem', array()));
   }
 
   return $factory;

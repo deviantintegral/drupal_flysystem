@@ -52,13 +52,14 @@ class FlysystemFactory {
 
   /**
    * Constructs a FlysystemFactory object.
+   *
+   * @param array $settings
+   *   The settings from settings.php.
    */
-  public function __construct() {
-    $this->settings = variable_get('flysystem', array());
-
+  public function __construct(array $settings) {
     // Apply defaults.
-    foreach ($this->settings as $scheme => $configuration) {
-      $this->settings[$scheme] += $this->defaults;
+    foreach ($settings as $scheme => $configuration) {
+      $this->settings[$scheme] = $configuration + $this->defaults;
     }
   }
 
