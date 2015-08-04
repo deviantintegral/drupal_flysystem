@@ -50,6 +50,13 @@ function flysystem_menu() {
 }
 
 /**
+ * Implements hook_cron().
+ */
+function flysystem_cron() {
+  flysystem_factory()->ensure();
+}
+
+/**
  * Implements hook_file_download().
  */
 function flysystem_file_download($uri) {

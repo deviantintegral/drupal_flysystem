@@ -114,7 +114,7 @@ class Local extends FlysystemPluginBase {
 
     $path = str_replace('\\', '/', $this->publicPath . '/' . $this->getTarget($uri));
 
-    return return $GLOBALS['base_url'] . '/' . drupal_encode_path($path);
+    return $GLOBALS['base_url'] . '/' . drupal_encode_path($path);
   }
 
   /**
