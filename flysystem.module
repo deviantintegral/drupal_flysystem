@@ -120,8 +120,8 @@ function flysystem_stream_wrappers() {
  */
 function flysystem_flysystem_plugins() {
   $plugins = array(
-    'null' => array(
-      'class' => 'Drupal\flysystem\Flysystem\Null',
+    'missing' => array(
+      'class' => 'Drupal\flysystem\Flysystem\Missing',
     ),
     'local' => array(
       'class' => 'Drupal\flysystem\Flysystem\Local',
@@ -158,11 +158,11 @@ function flysystem_get_plugin($id, array $configuration = array()) {
   watchdog('flysystem', 'Unable to find the plugin: @id', array('@id' => $id), WATCHDOG_ALERT);
 
   // Avoid infinite loop.
-  if ($id === 'null') {
+  if ($id === 'missing') {
     return FALSE;
   }
 
-  return flysystem_get_plugin('null');
+  return flysystem_get_plugin('missing');
 }
 
 /**
