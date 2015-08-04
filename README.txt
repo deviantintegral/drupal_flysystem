@@ -4,7 +4,6 @@ Flysystem
 ## REQUIREMENTS ##
 
 - PHP 5.4 or greater
-- The mbstring extension. (http://php.net/manual/en/book.mbstring.php)
 - Composer (https://getcomposer.org)
 - Composer manager (https://www.drupal.org/project/composer_manager)
 
@@ -21,7 +20,7 @@ important. (using drush)
 
 Stream wrappers are configured in settings.php. The keys (localexample) are the
 names of the stream wrappers. Can be used like 'localexample://filename.txt' The
-'type' key, is the type of adapter. Available adapters are:
+'driver' key, is the type of adapter. Available adapters are:
 
  - local
  - ftp (Requires the ftp extension)
@@ -38,7 +37,7 @@ Example configuration:
 $schemes = array(
   'localexample' => array(       // The name of the stream wrapper. localexample://
 
-    'type' => 'local',           // The plugin key.
+    'driver' => 'local',         // The plugin key.
 
     'config' => array(
       'root' => '/path/to/dir',  // If 'root' is inside the public directory,
@@ -55,7 +54,7 @@ $schemes = array(
   ),
 
   'ftpexample' => array(
-    'type' => 'ftp',
+    'driver' => 'ftp',
     'config' => array(
       'host' => 'ftp.example.com',
       'username' => 'username',
