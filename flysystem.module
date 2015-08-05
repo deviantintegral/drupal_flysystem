@@ -69,7 +69,9 @@ function flysystem_menu() {
  * Implements hook_cron().
  */
 function flysystem_cron() {
-  flysystem_factory()->ensure();
+  if (class_exists('Twistor\FlysystemStreamWrapper')) {
+    flysystem_factory()->ensure();
+  }
 }
 
 /**
