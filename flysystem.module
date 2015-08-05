@@ -47,22 +47,37 @@ function flysystem_menu() {
       'type' => MENU_CALLBACK,
     );
 
-    foreach (variable_get('flysystem', array()) as $scheme => $conf) {
-      $plugin = flysystem_factory()->getPlugin($scheme);
+    if (class_exists('Drupal\flysystem\FlysystemFactory')) {
+      foreach (variable_get('flysystem', array()) as $scheme => $conf) {
+        $plugin = flysystem_factory()->getPlugin($scheme);
 
-      if ($plugin instanceof Local && $public_path = $plugin->getPublicPath()) {
-        $items[$public_path . '/styles/%image_style'] = array(
-          'title' => 'Generate image style',
-          'page callback' => 'image_style_deliver',
-          'page arguments' => array(count(explode('/', $public_path)) + 1),
-          'access callback' => TRUE,
-          'type' => MENU_CALLBACK,
-        );
+        if ($plugin instanceof Local && $public_path = $plugin->getPublicPath()) {
+          $items[$public_path . '/styles/%image_style'] = array(
+            'title' => 'Generate image style',
+            'page callback' => 'image_style_deliver',
+            'page arguments' => array(count(explode('/', $public_path)) + 1),
+            'access callback' => TRUE,
+            'type' => MENU_CALLBACK,
+          );
+        }
       }
     }
   }
 
   return $items;
+}
+
+/**
+ * Implements feeds_permission().
+ */
+function flysystem_permission() {
+  return array(
+    'administer flysystem' => array(
+      'title' => t('Administer Flysystem'),
+      'description' => t('Sync Flysystem filesystems.'),
+      'restrict access' => TRUE,
+    ),
+  );
 }
 
 /**
