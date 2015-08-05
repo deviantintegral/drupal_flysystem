@@ -272,14 +272,10 @@ function flysystem_dependencies_check() {
       'Drupal\flysystem\FlysystemFactory',
     );
 
-    foreach ($dependencies as $dependency) {
-      if (!class_exists($dependency)) {
-        $checked = FALSE;
-        break;
-      }
-    }
-
     $checked = TRUE;
+    foreach ($dependencies as $dependency) {
+      $checked = $checked && class_exists($dependency);
+    }
   }
 
   return $checked;
