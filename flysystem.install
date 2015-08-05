@@ -15,21 +15,10 @@ function flysystem_requirements($phase) {
     return $requirements;
   }
 
-  $dependencies = array(
-    'League\Flysystem\Filesystem' => t('Flysystem'),
-    'League\Flysystem\Cached\CachedAdapter' => t('cache adapter'),
-    'League\Flysystem\Replicate\ReplicateAdapter' => t('replicate adapter'),
-    'Twistor\FlysystemStreamWrapper' => t('stream wrapper'),
-  );
-
-  $missing = array_filter(array_map(function ($dependency) use ($dependencies) {
-    return class_exists($dependency) ? FALSE : $dependencies[$dependency];
-  }, array_keys($dependencies)));
-
-  if ($missing) {
+  if (!flysystem_dependencies_check()) {
     $requirements['flysystem_dependencies'] = array(
       'title' => t('Flysystem'),
-      'description' => t('Dependencies missing: @deps.', array('@deps' => implode(', ', $missing))),
+      'description' => t('The Flysystem dependencies are not installed correctly.'),
       'severity' => REQUIREMENT_ERROR,
     );
 

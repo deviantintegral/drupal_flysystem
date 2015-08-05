@@ -47,7 +47,7 @@ function flysystem_menu() {
       'type' => MENU_CALLBACK,
     );
 
-    if (class_exists('Drupal\flysystem\FlysystemFactory')) {
+    if (flysystem_dependencies_check()) {
       foreach (variable_get('flysystem', array()) as $scheme => $conf) {
         $plugin = flysystem_factory()->getPlugin($scheme);
 
@@ -84,7 +84,7 @@ function flysystem_permission() {
  * Implements hook_cron().
  */
 function flysystem_cron() {
-  if (class_exists('Twistor\FlysystemStreamWrapper')) {
+  if (flysystem_dependencies_check()) {
     flysystem_factory()->ensure();
   }
 }
@@ -93,6 +93,10 @@ function flysystem_cron() {
  * Implements hook_file_download().
  */
 function flysystem_file_download($uri) {
+  if (!flysystem_dependencies_check()) {
+    return;
+  }
+
   $scheme = file_uri_scheme($uri);
   $schemes = variable_get('flysystem', array());
 
@@ -134,8 +138,8 @@ function flysystem_stream_wrappers() {
     return $wrappers;
   }
 
-  if (!class_exists('Twistor\FlysystemStreamWrapper')) {
-    watchdog('flysystem', 'The Flysystem StreamWrapper class is missing. Make sure all module updates have run. Otherwise, run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
+  if (!flysystem_dependencies_check()) {
+    watchdog('flysystem', 'The Flysystem dependencies are not installed correctly. Make sure all module updates have run. Otherwise, run drush composer-rebuild and drush composer-manager update to update your vendor directory.');
     return $wrappers;
   }
 
@@ -247,3 +251,36 @@ function flysystem_factory() {
   return $factory;
 }
 
+/**
+ * Checks that dependencies are installed correctly.
+ *
+ * This should be needed during normal operation. Only during certain hooks that
+ * might get called before dependencies are installed or loaded.
+ *
+ * @return bool
+ *   Returns true on success, and false on failure.
+ */
+function flysystem_dependencies_check() {
+  $checked = &drupal_static(__FUNCTION__, NULL);
+
+  if (!isset($checked)) {
+    $dependencies = array(
+      'League\Flysystem\Filesystem',
+      'League\Flysystem\Cached\CachedAdapter',
+      'League\Flysystem\Replicate\ReplicateAdapter',
+      'Twistor\FlysystemStreamWrapper',
+      'Drupal\flysystem\FlysystemFactory',
+    );
+
+    foreach ($dependencies as $dependency) {
+      if (!class_exists($dependency)) {
+        $checked = FALSE;
+        break;
+      }
+    }
+
+    $checked = TRUE;
+  }
+
+  return $checked;
+}

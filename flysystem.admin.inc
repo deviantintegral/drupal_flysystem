@@ -9,6 +9,11 @@
  * Page callback for the Flysystem configuration form.
  */
 function flysystem_config_form(array $form, array &$form_state) {
+  if (!flysystem_dependencies_check()) {
+    drupal_set_message(t('The Flysystem dependencies are not installed correctly.'));
+    return $form;
+  }
+
   $schemes = array_keys(variable_get('flysystem', array()));
 
   $form['sync_from'] = array(
