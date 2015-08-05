@@ -136,10 +136,10 @@ class Local extends FlysystemPluginBase {
     return array(array(
       'severity' => WATCHDOG_ERROR,
       'message' => 'See <a href="@url">@url</a> for information about the recommended .htaccess file which should be added to the %directory directory to help protect against arbitrary code execution.',
-      'context' => [
+      'context' => array(
         '%directory' => $this->root,
         '@url' => 'https://www.drupal.org/SA-CORE-2013-003',
-      ],
+      ),
     ));
   }
 
