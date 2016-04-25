@@ -15,3 +15,8 @@ services:
     class: Drupal\flysystem\PathProcessor\FlysystemPathProcessor
     tags:
       - { name: path_processor_inbound, priority: 400 }
+
+  path_processor.flysystem_redirect:
+    class: Drupal\flysystem\PathProcessor\FlysystemImageStyleRedirectProcessor
+    tags:
+      - { name: path_processor_inbound, priority: 400 }
