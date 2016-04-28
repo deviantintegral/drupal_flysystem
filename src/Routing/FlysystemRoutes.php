@@ -75,7 +75,9 @@ class FlysystemRoutes implements ContainerInjectionInterface {
    *   An array of route objects.
    */
   public function routes() {
-    $public_directory_path = $this->streamWrapperManager->getViaScheme('public')->getDirectoryPath();
+    /** @var \Drupal\Core\StreamWrapper\PublicStream $public_wrapper */
+    $public_wrapper = $this->streamWrapperManager->getViaScheme('public');
+    $public_directory_path = $public_wrapper->getDirectoryPath();
     $routes = [];
 
     $all_settings = Settings::get('flysystem', []);
@@ -85,16 +87,18 @@ class FlysystemRoutes implements ContainerInjectionInterface {
 
       // Public image route that serves initially from Drupal, and then
       // redirects to a remote URL when it's ready.
-      $routes['flysystem.' . $scheme . '.style_redirect'] = new Route(
-        "/_flysystem-style-redirect/styles/{image_style}/$scheme",
-        [
-          '_controller' => 'Drupal\flysystem\Controller\ImageStyleRedirectController::deliver',
-          'scheme' => $scheme,
-        ],
-        [
-          '_access' => 'TRUE',
-        ]
-      );
+      if ($this->moduleHandler->moduleExists('image')) {
+        $routes['flysystem.' . $scheme . '.style_redirect'] = new Route(
+          "/_flysystem-style-redirect/styles/{image_style}/$scheme",
+          [
+            '_controller' => 'Drupal\flysystem\Controller\ImageStyleRedirectController::deliver',
+            'scheme' => $scheme,
+          ],
+          [
+            '_access' => 'TRUE',
+          ]
+        );
+      }
 
       if ($settings['driver'] !== 'local' || empty($settings['config']['public'])) {
         continue;

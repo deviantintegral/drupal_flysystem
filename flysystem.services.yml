@@ -11,6 +11,12 @@ services:
     class: Drupal\flysystem\FlysystemFactory
     arguments: ['@plugin.manager.flysystem', '@file_system', '@cache.default', '@logger.channel.flysystem']
 
+  flysystem_image_style_copier:
+    class: Drupal\flysystem\ImageStyleCopier
+    arguments: ['@lock', '@file_system', '@logger.channel.image']
+    tags:
+      - { name: event_subscriber }
+
   path_processor.flysystem:
     class: Drupal\flysystem\PathProcessor\FlysystemPathProcessor
     tags:

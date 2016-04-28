@@ -6,21 +6,18 @@
 
 namespace Drupal\flysystem\Controller;
 
-use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\File\FileSystem;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Image\ImageFactory;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use Drupal\file\Entity\File;
-use Drupal\file\FileInterface;
+use Drupal\flysystem\ImageStyleCopier;
 use Drupal\image\ImageStyleInterface;
 use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
-use Symfony\Component\HttpFoundation\File\Exception\UploadException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
@@ -45,6 +42,13 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
   protected $fileSystem;
 
   /**
+   * The image style copier.
+   *
+   * @var \Drupal\flysystem\ImageStyleCopier
+   */
+  protected $imageStyleCopier;
+
+  /**
    * Constructs a ImageStyleDownloadController object.
    *
    * @param \Drupal\Core\Lock\LockBackendInterface $lock
@@ -55,11 +59,14 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
    *   The file entity storage.
    * @param \Drupal\Core\File\FileSystemInterface $file_system
    *   The file system.
+   * @param \Drupal\flysystem\ImageStyleCopier $image_style_copier
+   *   The image style copier.
    */
-  public function __construct(LockBackendInterface $lock, ImageFactory $image_factory, EntityStorageInterface $file_storage, FileSystemInterface $file_system) {
+  public function __construct(LockBackendInterface $lock, ImageFactory $image_factory, EntityStorageInterface $file_storage, FileSystemInterface $file_system, ImageStyleCopier $image_style_copier) {
     parent::__construct($lock, $image_factory);
     $this->fileStorage = $file_storage;
     $this->fileSystem = $file_system;
+    $this->imageStyleCopier = $image_style_copier;
   }
 
   /**
@@ -73,11 +80,14 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     /** @var \Drupal\Core\File\FileSystemInterface $file_system */
     $file_system = $container->get('file_system');
 
+    /** @var \Drupal\flysystem\ImageStyleCopier $image_style_copier */
+    $image_style_copier = $container->get('flysystem_image_style_copier');
     return new static(
       $lock,
       $image_factory,
       $container->get('entity.manager')->getStorage('file'),
-      $file_system
+      $file_system,
+      $image_style_copier
     );
   }
 
@@ -110,49 +120,6 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
   }
 
   /**
-   * Generate an image with the remote stream wrapper.
-   *
-   * @param string $temporary_uri
-   *   The temporary file URI to copy to the adapter.
-   * @param string $source_uri
-   *   The URI of the source image.
-   * @param \Drupal\image\ImageStyleInterface $image_style
-   *   The image style to generate.
-   *
-   * @return string Thrown if the image could not be copied.
-   *   Thrown if the image could not be copied.
-   */
-  protected function copyToAdapter($temporary_uri, $source_uri, ImageStyleInterface $image_style) {
-    $derivative_uri = $image_style->buildUri($source_uri);
-
-    // file_unmanaged_copy() doesn't distinguish between a FALSE return due to
-    // and error or a FALSE return due to an existing file. If we can't acquire
-    // this lock, we know another thread is uploading the image and we ignore
-    // uploading it in this thread.
-    $lock_name = 'flysystem_copy_to_adapter:' . $image_style->id() . ':' . Crypt::hashBase64($source_uri);
-    if (!$this->lock->acquire($lock_name)) {
-      throw new UploadException('Another copy of %image to %destination is in progress', $temporary_uri, $derivative_uri);
-    }
-
-    // Get the folder for the final location of this style.
-    $directory = $this->fileSystem->dirname($derivative_uri);
-
-    // Build the destination folder tree if it doesn't already exist.
-    if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
-      $this->getLogger('image')->error('Failed to create style directory: %directory', array('%directory' => $directory));
-      return FALSE;
-    }
-    if (!$path = file_unmanaged_copy($temporary_uri, $derivative_uri, FILE_EXISTS_REPLACE)) {
-      $this->lock->release($lock_name);
-      throw new UploadException(sprintf('Unable to copy %image to %destination', $temporary_uri, $derivative_uri));
-    }
-
-    $this->lock->release($lock_name);
-
-    return $path;
-  }
-
-  /**
    * Generate a temporary image for an image style.
    *
    * @param string $scheme
@@ -173,7 +140,8 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     $destination_temp = $image_style->buildUri("temporary://flysystem/$scheme/$source_path");
 
     // Save the temporary image so cron will eventually clean it up.
-    $temporary_image = reset($this->fileStorage->loadByProperties(['uri' => $destination_temp]));
+    $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
+    $temporary_image = reset($source_file);
     // The temporary file entity could exist, but the file on disk could have
     // been removed by a server reboot or a system administrator.
     if (!$temporary_image) {
@@ -196,10 +164,12 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     catch (ServiceUnavailableHttpException $e) {
       // This exception is only thrown if the lock could not be acquired.
       $tries = 0;
-      while ($tries < 4 && (!file_exists($destination_temp) || !$temporary_image = reset($this->fileStorage->loadByProperties(['uri' => $destination_temp])))) {
+      $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
+      while ($tries < 4 && (!file_exists($destination_temp) || !$temporary_image = reset($source_file))) {
         // The file still doesn't exist or it exists but the other thread hasn't
         // saved the entity yet.
         usleep(250000);
+        $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
         $tries++;
       }
 
@@ -216,22 +186,12 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
 
   /**
    * Flush the output buffer and copy the temporary image to the adapter.
-   *
-   * @param \Drupal\file\FileInterface $temporary_image
-   *   The temporary image that was generated.
-   * @param string $source_uri
-   *   The URI of the source image.
-   * @param \Drupal\image\ImageStyleInterface $image_style
-   *   The image style that was generated.
-   *
-   * @return string
-   *   The path to the copied image.
    */
-  protected function flushCopy(FileInterface $temporary_image, $source_uri, ImageStyleInterface $image_style) {
+  protected function flushCopy() {
     // We have to call both of these to actually flush the image.
-    ob_end_flush();
+    Response::closeOutputBuffers(0, TRUE);
     flush();
-    return $this->copyToAdapter($temporary_image->getFileUri(), $source_uri, $image_style);
+    $this->imageStyleCopier->processCopyTasks();
   }
 
   /**
@@ -283,9 +243,20 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     $derivative_uri = $image_style->buildUri($source_uri);
     try {
       $temporary_image = $this->generateTemporaryImage($scheme, $source_path, $image_style);
-      drupal_register_shutdown_function(function () use ($source_uri, $temporary_image, $image_style) {
-        $this->flushCopy($temporary_image, $source_uri, $image_style);
-      });
+      // Register a copy task with the kernel terminate handler.
+      $this->imageStyleCopier->addCopyTask($temporary_image->getFileUri(), $source_uri, $image_style);
+      // Symfony's kernel terminate handler is documented to only executes after
+      // flushing with fastcgi, and not with mod_php or regular CGI. However,
+      // it appears to work with mod_php. We assume it doesn't and register a
+      // shutdown handler unless we know we are under fastcgi. If images have
+      // been previously flushed and uploaded, this call will do nothing.
+      //
+      // https://github.com/symfony/symfony-docs/issues/6520
+      if (!function_exists('fastcgi_finish_request')) {
+        drupal_register_shutdown_function(function () {
+          $this->flushCopy();
+        });
+      }
 
       return $this->send($scheme, $temporary_image->getFileUri());
     }
