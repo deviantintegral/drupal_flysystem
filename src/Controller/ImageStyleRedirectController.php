@@ -129,7 +129,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
    * @param \Drupal\image\ImageStyleInterface $image_style
    *   The image style to generate.
    *
-   * @throws \Exception
+   * @throws \RuntimeException
    *   Thrown when generate() failed to generate an image.
    *
    * @return \Drupal\file\Entity\File
@@ -244,7 +244,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     try {
       $temporary_image = $this->generateTemporaryImage($scheme, $source_path, $image_style);
     }
-    catch (\Exception $e) {
+    catch (\RuntimeException $e) {
       $this->logger->notice('Unable to generate the derived image located at %path.', array('%path' => $derivative_uri));
       return new Response($this->t('Error generating image.'), 500);
     }
