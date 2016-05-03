@@ -26,6 +26,7 @@ class FlysystemServiceProvider implements ServiceProviderInterface {
 
     $this->swapDumper($container, 'js');
     $this->swapDumper($container, 'css');
+    $this->swapPublicGuard($container);
 
     foreach (Settings::get('flysystem', []) as $scheme => $settings) {
 
@@ -76,6 +77,20 @@ class FlysystemServiceProvider implements ServiceProviderInterface {
     $container
       ->getDefinition('asset.' . $extension . '.collection_optimizer')
       ->setClass('Drupal\flysystem\Asset\\' . ucfirst($extension) . 'CollectionOptimizer');
+  }
+
+  /**
+   * Swaps the public file system for the public files guard if enabled.
+   *
+   * @param \Drupal\Core\DependencyInjection\ContainerBuilder $container
+   *   The container.
+   */
+  protected function swapPublicGuard(ContainerBuilder $container) {
+    if (Settings::get('flysystem_public_guard', FALSE)) {
+      $container
+        ->getDefinition('stream_wrapper.public')
+        ->setClass('Drupal\flysystem\StreamWrapper\PublicGuardStream');
+    }
   }
 
 }

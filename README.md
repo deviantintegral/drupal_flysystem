@@ -105,4 +105,13 @@ $schemes = [
 
 // Don't forget this!
 $settings['flysystem'] = $schemes;
+
+// If you are replacing the public file system, and want to know when public://
+// is still used, enable the public file system guard. Be sure to change the
+// default file system wrapper as well.
+$settings['flysystem_public_guard'] = TRUE;
+
+// The method to use when public:// is accessed. 'log' logs to the system log
+// while 'exception' throws a \RuntimeException.
+$settings['flysystem_public_guard_method'] = 'log';
 ```
