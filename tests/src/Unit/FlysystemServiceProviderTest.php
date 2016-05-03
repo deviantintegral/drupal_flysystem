@@ -11,6 +11,8 @@ use Drupal\Core\Asset\AssetDumper;
 use Drupal\Core\Asset\JsCollectionOptimizer;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Site\Settings;
+use Drupal\Core\StreamWrapper\PublicStream;
+use Drupal\flysystem\StreamWrapper\PublicGuardStream;
 use Drupal\Tests\UnitTestCase;
 use Drupal\flysystem\Asset\AssetDumper as FlysystemAssetDumper;
 use Drupal\flysystem\Asset\JsCollectionOptimizer as FlysystemJsCollectionOptimizer;
@@ -25,7 +27,7 @@ use Drupal\flysystem\PathProcessor\LocalPathProcessor;
 class FlysystemServiceProviderTest extends UnitTestCase {
 
   /**
-   * @var \Symfony\Component\DependencyInjection\ContainerInterface
+   * @var \Drupal\Core\DependencyInjection\ContainerBuilder
    */
   protected $container;
 
@@ -95,11 +97,14 @@ class FlysystemServiceProviderTest extends UnitTestCase {
     $this->assertSame(AssetDumper::class, $this->container->getDefinition('asset.js.dumper')->getClass());
     $this->assertSame(JsCollectionOptimizer::class, $this->container->getDefinition('asset.js.collection_optimizer')->getClass());
 
+    $this->container->register('stream_wrapper.public', PublicStream::class);
+
     // A successful swap.
-    new Settings(['flysystem' => ['testscheme' => ['driver' => 'whatever', 'serve_js' => TRUE]]]);
+    new Settings(['flysystem' => ['testscheme' => ['driver' => 'whatever', 'serve_js' => TRUE]], 'flysystem_public_guard' => TRUE]);
     (new FlysystemServiceProvider())->register($this->container);
     $this->assertSame(FlysystemAssetDumper::class, $this->container->getDefinition('asset.js.dumper')->getClass());
     $this->assertSame(FlysystemJsCollectionOptimizer::class, $this->container->getDefinition('asset.js.collection_optimizer')->getClass());
+    $this->assertSame(PublicGuardStream::class, $this->container->getDefinition('stream_wrapper.public')->getClass());
   }
 
 }

@@ -36,33 +36,35 @@ class PublicGuardStream extends PublicStream {
    *
    * @var string
    */
-  protected $method;
+  protected $guardMethod;
 
   /**
    * PublicGuardStream constructor.
    *
    * As PHP instantiates the stream wrapper outside of PHP code, we have to fall
    * back to global services. However, unit tests can still pass in
-   * dependencies.
+   * dependencies. Note this constructor uses the Settings class.
    *
    * @param \Psr\Log\LoggerInterface $logger
    *   (optional) The logger to use for system messages.
-   * @param string $guard_method
-   *   (optional) The method to use when public files are used, either 'log' or
-   *   'exception'.
    */
-  public function __construct(LoggerInterface $logger = NULL, $guard_method = NULL) {
-    if (!$logger) {
+  public function __construct(LoggerInterface $logger = NULL) {
+    if ($logger) {
+      $this->logger = $logger;
+    }
+    else {
+      // @codeCoverageIgnoreStart
       $this->logger = \Drupal::logger('flysystem');
+      // @codeCoverageIgnoreEnd
     }
 
-    if (!$guard_method) {
-      $this->method = Settings::get('flysystem_public_guard_method');
-    }
+    $this->guardMethod = Settings::get('flysystem_public_guard_method');
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function getName() {
     return t('Public files guard');
@@ -70,6 +72,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function getDescription() {
     return t('Flysystem: Public files guard to log or redirect public file accesses.');
@@ -77,6 +81,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function setUri($uri) {
     $this->handle($uri, __FUNCTION__);
@@ -85,6 +91,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   protected function getTarget($uri = NULL) {
     $this->handle($uri, __FUNCTION__);
@@ -93,6 +101,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   protected function getLocalPath($uri = NULL) {
     $this->handle($uri, __FUNCTION__);
@@ -101,6 +111,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function stream_open($uri, $mode, $options, &$opened_path) {
     $this->handle($uri, __FUNCTION__);
@@ -109,6 +121,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function stream_metadata($uri, $option, $value) {
     $this->handle($uri, __FUNCTION__);
@@ -117,6 +131,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function unlink($uri) {
     $this->handle($uri, __FUNCTION__);
@@ -125,6 +141,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function rename($from_uri, $to_uri) {
     $this->handle($from_uri, __FUNCTION__);
@@ -133,6 +151,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function dirname($uri = NULL) {
     $this->handle($uri, __FUNCTION__);
@@ -141,6 +161,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function mkdir($uri, $mode, $options) {
     $this->handle($uri, __FUNCTION__);
@@ -149,6 +171,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function rmdir($uri, $options) {
     $this->handle($uri, __FUNCTION__);
@@ -157,6 +181,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function url_stat($uri, $flags) {
     $this->handle($uri, __FUNCTION__);
@@ -165,6 +191,8 @@ class PublicGuardStream extends PublicStream {
 
   /**
    * {@inheritdoc}
+   *
+   * @codeCoverageIgnore
    */
   public function dir_opendir($uri, $options) {
     $this->handle($uri, __FUNCTION__);
@@ -179,11 +207,10 @@ class PublicGuardStream extends PublicStream {
    * @param string $function
    *   The method in the stream wrapper that was called.
    */
-  protected function handle($uri, $function) {
-    switch ($this->method) {
+  public function handle($uri, $function) {
+    switch ($this->guardMethod) {
       case static::THROW_EXCEPTION:
         $this->exception($uri, $function);
-        break;
 
       case static::LOG_USAGE:
       default:
