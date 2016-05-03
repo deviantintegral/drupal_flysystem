@@ -17,7 +17,7 @@ use Drupal\flysystem\ImageStyleCopier;
 use Drupal\image\ImageStyleInterface;
 use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Filesystem\Exception\FileNotFoundException;
+use Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
@@ -202,7 +202,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
    * @param \Drupal\image\ImageStyleInterface $image_style
    *   The image style to redirect to.
    *
-   * @throws \Symfony\Component\Filesystem\Exception\FileNotFoundException
+   * @throws \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException
    *   Thrown if the derivative does not exist on the adapter.
    *
    * @return \Drupal\Core\Routing\TrustedRedirectResponse
