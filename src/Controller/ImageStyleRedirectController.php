@@ -243,27 +243,29 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     $derivative_uri = $image_style->buildUri($source_uri);
     try {
       $temporary_image = $this->generateTemporaryImage($scheme, $source_path, $image_style);
-      // Register a copy task with the kernel terminate handler.
-      $this->imageStyleCopier->addCopyTask($temporary_image->getFileUri(), $source_uri, $image_style);
-      // Symfony's kernel terminate handler is documented to only executes after
-      // flushing with fastcgi, and not with mod_php or regular CGI. However,
-      // it appears to work with mod_php. We assume it doesn't and register a
-      // shutdown handler unless we know we are under fastcgi. If images have
-      // been previously flushed and uploaded, this call will do nothing.
-      //
-      // https://github.com/symfony/symfony-docs/issues/6520
-      if (!function_exists('fastcgi_finish_request')) {
-        drupal_register_shutdown_function(function () {
-          $this->flushCopy();
-        });
-      }
-
-      return $this->send($scheme, $temporary_image->getFileUri());
     }
     catch (\Exception $e) {
       $this->logger->notice('Unable to generate the derived image located at %path.', array('%path' => $derivative_uri));
       return new Response($this->t('Error generating image.'), 500);
     }
+
+    // Register a copy task with the kernel terminate handler.
+    $this->imageStyleCopier->addCopyTask($temporary_image->getFileUri(), $source_uri, $image_style);
+
+    // Symfony's kernel terminate handler is documented to only executes after
+    // flushing with fastcgi, and not with mod_php or regular CGI. However,
+    // it appears to work with mod_php. We assume it doesn't and register a
+    // shutdown handler unless we know we are under fastcgi. If images have
+    // been previously flushed and uploaded, this call will do nothing.
+    //
+    // https://github.com/symfony/symfony-docs/issues/6520
+    if (!function_exists('fastcgi_finish_request')) {
+      drupal_register_shutdown_function(function () {
+        $this->flushCopy();
+      });
+    }
+
+    return $this->send($scheme, $temporary_image->getFileUri());
   }
 
 }
