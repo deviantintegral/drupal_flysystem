@@ -157,7 +157,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     try {
       $success = $this->generate($image_style, $image_uri, $destination_temp);
       if (!$success) {
-        throw new \Exception('The temporary image could not be generated');
+        throw new \RuntimeException('The temporary image could not be generated');
       }
       $temporary_image->save();
     }
