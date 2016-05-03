@@ -53,7 +53,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    *
    * @var array
    */
-  protected static $copyTasks = [];
+  protected $copyTasks = [];
 
   /**
    * Construct ImageStyleCopier.
@@ -108,19 +108,19 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    *   The image style being copied.
    */
   public function addCopyTask($temporary_uri, $source_uri, ImageStyleInterface $image_style) {
-    static::$copyTasks[] = func_get_args();
+    $this->copyTasks[] = func_get_args();
   }
 
   /**
    * Process all image copy tasks.
    */
   public function processCopyTasks() {
-    foreach (static::$copyTasks as $task) {
+    foreach ($this->copyTasks as $task) {
       list($temporary_uri, $source_uri, $image_style) = $task;
       $this->copyToAdapter($temporary_uri, $source_uri, $image_style);
     }
 
-    static::$copyTasks = array();
+    $this->copyTasks = array();
   }
 
   /**
