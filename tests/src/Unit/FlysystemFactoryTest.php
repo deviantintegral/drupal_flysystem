@@ -11,6 +11,7 @@ use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Cache\NullBackend;
 use Drupal\Core\File\FileSystemInterface as CoreFileSystemInterface;
 use Drupal\Core\Site\Settings;
+use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
 use Drupal\Tests\UnitTestCase;
 use Drupal\flysystem\FlysystemFactory;
 use Drupal\flysystem\Flysystem\Adapter\MissingAdapter;
@@ -115,7 +116,7 @@ class FlysystemFactoryTest extends UnitTestCase {
     ]);
 
     $factory = $this->getFactory();
-    $this->assertInstanceOf(CachedAdapter::class, $factory->getFilesystem('testscheme')->getAdapter());
+    $this->assertInstanceOf(DrupalCacheAdapter::class, $factory->getFilesystem('testscheme')->getAdapter());
   }
 
   /**
