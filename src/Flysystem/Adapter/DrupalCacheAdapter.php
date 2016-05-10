@@ -237,6 +237,8 @@ class DrupalCacheAdapter implements AdapterInterface {
       return TRUE;
     }
 
+    // Always check the upstream adapter for new files.
+    // TODO: This could be a good place for a microcache?
     return $this->adapter->has($path);
   }
 
@@ -271,7 +273,9 @@ class DrupalCacheAdapter implements AdapterInterface {
    * @return array
    */
   public function listContents($directory = '', $recursive = FALSE) {
-    // TODO: Implement listContents() method.
+    // Don't cache directory listings to avoid having to keep track of
+    // incomplete cache entries.
+    // TODO: This could be a good place for a microcache?
     return $this->adapter->listContents($directory, $recursive);
   }
 
