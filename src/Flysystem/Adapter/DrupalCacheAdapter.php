@@ -94,7 +94,7 @@ class DrupalCacheAdapter implements AdapterInterface {
    * @return array|false false on failure file meta data on success
    */
   public function updateStream($path, $resource, Config $config) {
-    $metadata = $this->adapter->update($path, $resource, $config);
+    $metadata = $this->adapter->updateStream($path, $resource, $config);
 
     if ($metadata) {
       $item = $this->getCachedItem($path);
