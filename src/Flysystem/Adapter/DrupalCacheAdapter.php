@@ -5,7 +5,6 @@ namespace Drupal\flysystem\Flysystem\Adapter;
 use Drupal\Core\Cache\CacheBackendInterface;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
-use League\Flysystem\Util;
 
 /**
  * @class DrupalCacheAdapter
@@ -13,22 +12,35 @@ use League\Flysystem\Util;
  */
 class DrupalCacheAdapter implements AdapterInterface {
 
+  /**
+   * The flysystem adapter to cache data for.
+   *
+   * @var \League\Flysystem\AdapterInterface
+   */
   protected $adapter;
+
+  /**
+   * The cache backend to store data in.
+   *
+   * @var \Drupal\Core\Cache\CacheBackendInterface
+   */
   protected $cacheBackend;
 
+  /**
+   * Construct a new caching Flysystem adapter.
+   *
+   * @param \League\Flysystem\AdapterInterface $adapter
+   *   The flysystem adapter to cache data for.
+   * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
+   *   The cache backend to store data in.
+   */
   public function __construct(AdapterInterface $adapter, CacheBackendInterface $cacheBackend) {
     $this->adapter = $adapter;
     $this->cacheBackend = $cacheBackend;
   }
 
   /**
-   * Write a new file.
-   *
-   * @param string $path
-   * @param string $contents
-   * @param Config $config Config object
-   *
-   * @return array|false false on failure file meta data on success
+   * {@inheritdoc}
    */
   public function write($path, $contents, Config $config) {
     $metadata = $this->adapter->write($path, $contents, $config);
@@ -43,13 +55,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Write a new file using a stream.
-   *
-   * @param string $path
-   * @param resource $resource
-   * @param Config $config Config object
-   *
-   * @return array|false false on failure file meta data on success
+   * {@inheritdoc}
    */
   public function writeStream($path, $resource, Config $config) {
     $metadata = $this->adapter->writeStream($path, $resource, $config);
@@ -64,13 +70,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Update a file.
-   *
-   * @param string $path
-   * @param string $contents
-   * @param Config $config Config object
-   *
-   * @return array|false false on failure file meta data on success
+   * {@inheritdoc}
    */
   public function update($path, $contents, Config $config) {
     $metadata = $this->adapter->update($path, $contents, $config);
@@ -85,13 +85,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Update a file using a stream.
-   *
-   * @param string $path
-   * @param resource $resource
-   * @param Config $config Config object
-   *
-   * @return array|false false on failure file meta data on success
+   * {@inheritdoc}
    */
   public function updateStream($path, $resource, Config $config) {
     $metadata = $this->adapter->updateStream($path, $resource, $config);
@@ -106,12 +100,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Rename a file.
-   *
-   * @param string $path
-   * @param string $newpath
-   *
-   * @return bool
+   * {@inheritdoc}
    */
   public function rename($path, $newpath) {
     $result = $this->adapter->rename($path, $newpath);
@@ -130,12 +119,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Copy a file.
-   *
-   * @param string $path
-   * @param string $newpath
-   *
-   * @return bool
+   * {@inheritdoc}
    */
   public function copy($path, $newpath) {
     $result = $this->adapter->copy($path, $newpath);
@@ -149,11 +133,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Delete a file.
-   *
-   * @param string $path
-   *
-   * @return bool
+   * {@inheritdoc}
    */
   public function delete($path) {
     $result = $this->adapter->delete($path);
@@ -166,11 +146,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Delete a directory.
-   *
-   * @param string $dirname
-   *
-   * @return bool
+   * {@inheritdoc}
    */
   public function deleteDir($dirname) {
     // Before the delete we need to know what files are in the directory.
@@ -187,12 +163,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Create a directory.
-   *
-   * @param string $dirname directory name
-   * @param Config $config
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function createDir($dirname, Config $config) {
     $result = $this->adapter->createDir($dirname, $config);
@@ -206,12 +177,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Set the visibility for a file.
-   *
-   * @param string $path
-   * @param string $visibility
-   *
-   * @return array|false file meta data
+   * {@inheritdoc}
    */
   public function setVisibility($path, $visibility) {
     $result = $this->adapter->setVisibility($path, $visibility);
@@ -226,11 +192,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Check whether a file exists.
-   *
-   * @param string $path
-   *
-   * @return array|bool|null
+   * {@inheritdoc}
    */
   public function has($path) {
     if ($item = $this->cacheBackend->get($path)) {
@@ -243,34 +205,21 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Read a file.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function read($path) {
     return $this->adapter->read($path);
   }
 
   /**
-   * Read a file as a stream.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function readStream($path) {
     return $this->adapter->readStream($path);
   }
 
   /**
-   * List contents of a directory.
-   *
-   * @param string $directory
-   * @param bool $recursive
-   *
-   * @return array
+   * {@inheritdoc}
    */
   public function listContents($directory = '', $recursive = FALSE) {
     // Don't cache directory listings to avoid having to keep track of
@@ -280,11 +229,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Get all the meta data of a file or directory.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function getMetadata($path) {
     if ($cached = $this->cacheBackend->get($path)) {
@@ -304,11 +249,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Get all the meta data of a file or directory.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function getSize($path) {
     if ($cached = $this->cacheBackend->get($path)) {
@@ -328,11 +269,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Get the mimetype of a file.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function getMimetype($path) {
     if ($cached = $this->cacheBackend->get($path)) {
@@ -352,11 +289,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Get the timestamp of a file.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function getTimestamp($path) {
     if ($cached = $this->cacheBackend->get($path)) {
@@ -376,11 +309,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * Get the visibility of a file.
-   *
-   * @param string $path
-   *
-   * @return array|false
+   * {@inheritdoc}
    */
   public function getVisibility($path) {
     if ($cached = $this->cacheBackend->get($path)) {
@@ -411,4 +340,5 @@ class DrupalCacheAdapter implements AdapterInterface {
 
     return new CacheItem($path);
   }
+
 }
