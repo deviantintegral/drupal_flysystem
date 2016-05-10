@@ -9,6 +9,7 @@ use Drupal\Tests\UnitTestCase;
  * Tests \Drupal\flysystem\Flysystem\Adapter\CacheItem.
  *
  * @class CacheItemTest
+ *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\CacheItem
  */
 class CacheItemTest extends UnitTestCase {
@@ -17,6 +18,7 @@ class CacheItemTest extends UnitTestCase {
    * Test all get and set methods.
    *
    * @dataProvider getSetMethodsProvider
+   *
    * @covers ::__construct
    * @covers ::getMetadata
    * @covers ::getMimetype
@@ -60,4 +62,5 @@ class CacheItemTest extends UnitTestCase {
       ['visibility', ['visibility']],
     ];
   }
+
 }

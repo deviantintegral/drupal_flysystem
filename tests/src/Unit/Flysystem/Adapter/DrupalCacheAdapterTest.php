@@ -13,7 +13,9 @@ use League\Flysystem\Util;
  * Test the Drupal Cache Adapter.
  *
  * @class DrupalCacheAdapterTest
+ *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter
+ *
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::getCachedItem
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::__construct
  */
@@ -243,7 +245,6 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertEquals('test', $this->adapter->read('test.txt')['contents']);
   }
 
-
   /**
    * Test reading a stream.
    *
@@ -277,6 +278,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * Test methods that just wrap getMetadata().
    *
    * @dataProvider methodReturnsMetadataArrayProvider
+   *
    * @covers ::getMetadata
    * @covers ::getSize
    * @covers ::getTimestamp
@@ -350,4 +352,5 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ['getVisibility'],
     ];
   }
+
 }

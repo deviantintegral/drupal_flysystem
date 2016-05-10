@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \NoDrupal\Tests\flysystem\Unit\FlysystemFactoryTest.
- */
-
 namespace NoDrupal\Tests\flysystem\Unit;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
@@ -18,7 +13,6 @@ use Drupal\flysystem\Flysystem\Adapter\MissingAdapter;
 use Drupal\flysystem\Flysystem\Missing;
 use Drupal\flysystem\Plugin\FlysystemPluginInterface;
 use League\Flysystem\Adapter\NullAdapter;
-use League\Flysystem\Cached\CachedAdapter;
 use League\Flysystem\FilesystemInterface;
 use League\Flysystem\Replicate\ReplicateAdapter;
 use Prophecy\Argument;
@@ -177,7 +171,8 @@ class FlysystemFactoryTest extends UnitTestCase {
       'severity' => 'bad',
       'message' => 'Something bad',
       'context' => [],
-    ]]);
+    ],
+    ]);
 
     $errors = $this->getFactory()->ensure();
 
