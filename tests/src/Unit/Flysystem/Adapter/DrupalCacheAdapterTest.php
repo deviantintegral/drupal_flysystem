@@ -182,7 +182,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       'directory',
       'directory/subdirectory',
     ];
-    
+
     $this->assertEquals($expected, array_column($contents, 'path'));
   }
 }
