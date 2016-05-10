@@ -221,6 +221,8 @@ class DrupalCacheAdapter implements AdapterInterface {
       $item->setVisibility($visibility);
       $this->cacheBackend->set($path, $item);
     }
+
+    return $result;
   }
 
   /**
