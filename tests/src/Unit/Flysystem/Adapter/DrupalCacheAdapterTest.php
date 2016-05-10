@@ -7,6 +7,7 @@ use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
 use Drupal\Tests\UnitTestCase;
 use League\Flysystem\Config;
 use League\Flysystem\Memory\MemoryAdapter;
+use League\Flysystem\Util;
 
 class DrupalCacheAdapterTest extends UnitTestCase {
   /**
@@ -184,5 +185,74 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     ];
 
     $this->assertEquals($expected, array_column($contents, 'path'));
+  }
+
+  /**
+   * Test methods that just wrap getMetadata().
+   *
+   * @dataProvider methodReturnsMetadataArrayProvider
+   */
+  public function testGetMetadataMethods($method) {
+    // Test that when we have a cache item that we don't call the child
+    // adapter.
+    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $mock_adapter->expects($this->never())
+      ->method($method);
+
+    // Populate the adapter with a file, but then bust the cache.
+    $adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $metadata = $adapter->write('test.txt', 'test', new Config());
+    unset($metadata['contents']);
+    $data = $this->cacheBackend->get('test.txt')->data;
+    $data->setMetadata([]);
+    $this->cacheBackend->set('test.txt', $data);
+
+    // Tests fetching from the child adapter.
+    $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");
+
+    // Tests fetching from the cache.
+    $adapter = new DrupalCacheAdapter($mock_adapter, $this->cacheBackend);
+    $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test cached $method on the child adapter");
+  }
+
+  public function testGetMimetype() {
+    // Test that when we have a cache item that we don't call the child
+    // adapter.
+    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $mock_adapter->expects($this->never())
+      ->method('getMimetype');
+
+    // Populate the adapter with a file, but then bust the cache.
+    $adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $adapter->write('test.txt', 'test', new Config());
+    $data = $this->cacheBackend->get('test.txt')->data;
+    $data->setMimetype([]);
+    $mimetype = [
+      'mimetype' => Util::guessMimeType('test.txt', 'test'),
+      'path' => 'test.txt',
+    ];
+
+    // Tests fetching from the child adapter.
+    $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
+
+    // Tests fetching from the cache.
+    $adapter = new DrupalCacheAdapter($mock_adapter, $this->cacheBackend);
+    $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
+  }
+
+  /**
+   * @return array
+   */
+  public function methodReturnsMetadataArrayProvider() {
+    return [
+      ['getMetadata'],
+      ['getSize'],
+      ['getTimestamp'],
+      ['getVisibility'],
+    ];
   }
 }
