@@ -141,10 +141,8 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->copy($path, $newpath);
 
     if ($result) {
-      $metadata = Util::pathinfo($newpath);
-      $item = new CacheItem($newpath);
-      $item->setMetadata($metadata);
-      $this->cacheBackend->set($newpath, $item);
+      $this->cacheBackend->delete($newpath);
+      $this->getMetadata($newpath);
     }
 
     return $result;
