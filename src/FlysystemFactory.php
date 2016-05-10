@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flysystem\FlysystemFactory.
- */
-
 namespace Drupal\flysystem;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
@@ -12,7 +7,6 @@ use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
-use League\Flysystem\Cached\CachedAdapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Replicate\ReplicateAdapter;
 use Psr\Log\LoggerInterface;
