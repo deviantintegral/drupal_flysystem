@@ -13,11 +13,23 @@ namespace Drupal\flysystem\Flysystem\Adapter;
 class CacheItem {
 
   /**
+   * The scheme of the stream wrapper used for this cache item.
+   *
+   * @var string
+   */
+  protected $scheme;
+
+  /**
    * The path to the item.
    *
    * @var string
    */
   protected $path;
+
+  /**
+   * @var CacheItemBackendInterface
+   */
+  protected $cacheBackend;
 
   /**
    * The array of metadata for the item.
@@ -64,11 +76,16 @@ class CacheItem {
   /**
    * CacheItem constructor.
    *
+   * @param string $scheme
+   *   The scheme of the stream wrapper used for this cache item.
    * @param string $path
    *   The path of the item.
+   * @param CacheItemBackendInterface $cacheBackend
    */
-  public function __construct($path) {
+  public function __construct($scheme, $path, CacheItemBackendInterface $cacheBackend) {
+    $this->scheme = $scheme;
     $this->path = $path;
+    $this->cacheBackend = $cacheBackend;
   }
 
   /**
@@ -209,6 +226,38 @@ class CacheItem {
    */
   public function setPath($path) {
     $this->path = $path;
+  }
+
+  public function save() {
+    $this->cacheBackend->set($this);
+  }
+
+  public function delete() {
+    $this->cacheBackend->delete($this);
+  }
+
+  public function id() {
+    return $this->getCacheBackend()->getCacheKey($this->scheme, $this->getPath());
+  }
+
+  function __sleep() {
+    $properties = array_keys((array) $this);
+    unset($properties['cacheBackend']);
+    return $properties;
+  }
+
+  /**
+   * @return CacheItemBackendInterface
+   */
+  public function getCacheBackend() {
+    return $this->cacheBackend;
+  }
+
+  /**
+   * @param CacheItemBackendInterface $cacheBackend
+   */
+  public function setCacheBackend($cacheBackend) {
+    $this->cacheBackend = $cacheBackend;
   }
 
 }

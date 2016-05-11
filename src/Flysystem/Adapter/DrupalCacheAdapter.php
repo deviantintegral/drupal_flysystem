@@ -2,7 +2,6 @@
 
 namespace Drupal\flysystem\Flysystem\Adapter;
 
-use Drupal\Core\Cache\CacheBackendInterface;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
 
@@ -30,9 +29,9 @@ class DrupalCacheAdapter implements AdapterInterface {
   /**
    * The cache backend to store data in.
    *
-   * @var \Drupal\Core\Cache\CacheBackendInterface
+   * @var \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
    */
-  protected $cacheBackend;
+  protected $cacheItemBackend;
 
   /**
    * Construct a new caching Flysystem adapter.
@@ -41,13 +40,13 @@ class DrupalCacheAdapter implements AdapterInterface {
    *   The scheme of the stream wrapper used for this adapter.
    * @param \League\Flysystem\AdapterInterface $adapter
    *   The flysystem adapter to cache data for.
-   * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
+   * @param \Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $cacheItemBackend
    *   The cache backend to store data in.
    */
-  public function __construct($scheme, AdapterInterface $adapter, CacheBackendInterface $cacheBackend) {
+  public function __construct($scheme, AdapterInterface $adapter, CacheItemBackendInterface $cacheItemBackend) {
     $this->scheme = $scheme;
     $this->adapter = $adapter;
-    $this->cacheBackend = $cacheBackend;
+    $this->cacheItemBackend = $cacheItemBackend;
   }
 
   /**
@@ -57,9 +56,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $metadata = $this->adapter->write($path, $contents, $config);
 
     if ($metadata) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $path);
       $item->setMetadata($metadata);
-      $this->cacheBackend->set($path, $item);
+      $item->save();
     }
 
     return $metadata;
@@ -72,9 +71,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $metadata = $this->adapter->writeStream($path, $resource, $config);
 
     if ($metadata) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $path);
       $item->setMetadata($metadata);
-      $this->cacheBackend->set($path, $item);
+      $item->save();
     }
 
     return $metadata;
@@ -87,9 +86,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $metadata = $this->adapter->update($path, $contents, $config);
 
     if ($metadata) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $path);
       $item->setMetadata($metadata);
-      $this->cacheBackend->set($path, $item);
+      $item->save();
     }
 
     return $metadata;
@@ -102,9 +101,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $metadata = $this->adapter->updateStream($path, $resource, $config);
 
     if ($metadata) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $path);
       $item->setMetadata($metadata);
-      $this->cacheBackend->set($path, $item);
+      $item->save();
     }
 
     return $metadata;
@@ -117,13 +116,13 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->rename($path, $newpath);
 
     if ($result) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $newpath);
       $item->setPath($newpath);
       $metadata = $item->getMetadata();
       $metadata['path'] = $newpath;
       $item->setMetadata($metadata);
-      $this->cacheBackend->set($newpath, $item);
-      $this->cacheBackend->delete($path);
+      $item->save();
+      $item->delete();
     }
 
     return $result;
@@ -136,7 +135,7 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->copy($path, $newpath);
 
     if ($result) {
-      $this->cacheBackend->delete($newpath);
+      $this->cacheItemBackend->deleteByKey($this->getScheme(), $newpath);
       $this->getMetadata($newpath);
     }
 
@@ -150,7 +149,7 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->delete($path);
 
     if ($result) {
-      $this->cacheBackend->delete($path);
+      $this->cacheItemBackend->deleteByKey($this->getScheme(), $path);
     }
 
     return $result;
@@ -167,7 +166,7 @@ class DrupalCacheAdapter implements AdapterInterface {
 
     if ($result) {
       $paths = array_column($contents, 'path');
-      $this->cacheBackend->deleteMultiple($paths);
+      $this->cacheItemBackend->deleteMultiple($this->getScheme(), $paths);
     }
 
     return $result;
@@ -194,9 +193,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->setVisibility($path, $visibility);
 
     if ($result) {
-      $item = $this->getCachedItem($path);
+      $item = $this->cacheItemBackend->load($this->getScheme(), $path);
       $item->setVisibility($visibility);
-      $this->cacheBackend->set($path, $item);
+      $item->save();
     }
 
     return $result;
@@ -206,7 +205,7 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function has($path) {
-    if ($item = $this->cacheBackend->get($path)) {
+    if ($this->cacheItemBackend->load($this->getScheme(), $path)) {
       return TRUE;
     }
 
@@ -243,18 +242,14 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getMetadata($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
-      $item = $cached->data;
-      if ($metadata = $item->getMetadata()) {
-        return $metadata;
-      }
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
+    if ($metadata = $item->getMetadata()) {
+      return $metadata;
     }
 
     $metadata = $this->adapter->getMetadata($path);
-    $item = $this->getCachedItem($path);
     $item->setMetadata($metadata);
-    $this->cacheBackend->set($path, $item);
+    $item->save();
 
     return $metadata;
   }
@@ -263,18 +258,16 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getSize($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
-      $item = $cached->data;
+    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
       if ($size = $item->getSize()) {
         return $size;
       }
     }
 
     $size = $this->adapter->getSize($path);
-    $item = $this->getCachedItem($path);
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
     $item->setSize($size);
-    $this->cacheBackend->set($path, $item);
+    $item->save();
 
     return $size;
   }
@@ -283,18 +276,16 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getMimetype($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
-      $item = $cached->data;
+    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
       if ($mimetype = $item->getMimetype()) {
         return $mimetype;
       }
     }
 
     $mimetype = $this->adapter->getMimetype($path);
-    $item = $this->getCachedItem($path);
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
     $item->setMimetype($mimetype);
-    $this->cacheBackend->set($path, $item);
+    $item->save();
 
     return $mimetype;
   }
@@ -303,18 +294,16 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getTimestamp($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
-      $item = $cached->data;
+      if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
       if ($timestamp = $item->getTimestamp()) {
         return $timestamp;
       }
     }
 
     $timestamp = $this->adapter->getTimestamp($path);
-    $item = $this->getCachedItem($path);
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
     $item->setTimestamp($timestamp);
-    $this->cacheBackend->set($path, $item);
+    $item->save();
 
     return $timestamp;
   }
@@ -323,37 +312,32 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getVisibility($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
-      $item = $cached->data;
+    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
       if ($visibility = $item->getVisibility()) {
         return $visibility;
       }
     }
 
     $visibility = $this->adapter->getVisibility($path);
-    $item = $this->getCachedItem($path);
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
     $item->setVisibility($visibility);
-    $this->cacheBackend->set($path, $item);
+    $item->save();
 
     return $visibility;
   }
 
   /**
-   * Return a cached item, or a new cache item if the cache misses.
-   *
-   * @param string $path
-   *   The path for the item.
-   *
-   * @return \Drupal\flysystem\Flysystem\Adapter\CacheItem
-   *   A cache item.
+   * @return string
    */
-  private function getCachedItem($path) {
-    if ($cached = $this->cacheBackend->get($path)) {
-      return $cached->data;
-    }
+  public function getScheme() {
+    return $this->scheme;
+  }
 
-    return new CacheItem($path);
+  /**
+   * @param string $scheme
+   */
+  public function setScheme($scheme) {
+    $this->scheme = $scheme;
   }
 
 }
