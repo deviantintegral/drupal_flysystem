@@ -7,8 +7,9 @@ use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
 
 /**
+ * A Flysystem adapter implementing caching with Drupal's Cache API.
+ *
  * @class DrupalCacheAdapter
- * @package Drupal\flysystem\Flysystem\Adapter
  */
 class DrupalCacheAdapter implements AdapterInterface {
 
@@ -329,9 +330,13 @@ class DrupalCacheAdapter implements AdapterInterface {
   }
 
   /**
-   * @param $path
+   * Return a cached item, or a new cache item if the cache misses.
+   *
+   * @param string $path
+   *   The path for the item.
    *
    * @return \Drupal\flysystem\Flysystem\Adapter\CacheItem
+   *   A cache item.
    */
   private function getCachedItem($path) {
     if ($cached = $this->cacheBackend->get($path)) {

@@ -342,7 +342,10 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
+   * Return methods that use the same values as getMetadata().
+   *
    * @return array
+   *   An array of test cases, each containing an array of parameters.
    */
   public function methodReturnsMetadataArrayProvider() {
     return [
