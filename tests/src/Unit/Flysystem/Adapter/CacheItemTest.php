@@ -2,7 +2,9 @@
 
 namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
+use Drupal\Core\Cache\MemoryBackend;
 use Drupal\flysystem\Flysystem\Adapter\CacheItem;
+use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -38,7 +40,7 @@ class CacheItemTest extends UnitTestCase {
    * @covers ::setVisibility
    */
   public function testGetSetMethods($method, $value) {
-    $item = new CacheItem('path');
+    $item = new CacheItem('testing', 'path', new CacheItemBackend(new MemoryBackend('test')));
     $this->assertEquals('path', $item->getPath());
 
     $set = 'set' . ucfirst($method);

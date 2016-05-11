@@ -6,6 +6,7 @@ use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Site\Settings;
+use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Replicate\ReplicateAdapter;
@@ -191,7 +192,7 @@ class FlysystemFactory {
     }
 
     if ($settings['cache']) {
-      $adapter = new DrupalCacheAdapter($scheme, $adapter, $this->cacheBackend);
+      $adapter = new DrupalCacheAdapter($scheme, $adapter, new CacheItemBackend($this->cacheBackend));
     }
 
     return $adapter;
