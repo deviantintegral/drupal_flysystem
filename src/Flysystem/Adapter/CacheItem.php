@@ -228,19 +228,27 @@ class CacheItem {
     $this->path = $path;
   }
 
+  /**
+   * Save this cache item.
+   */
   public function save() {
     $this->cacheBackend->set($this);
   }
 
+  /**
+   * Delete this cache item.
+   */
   public function delete() {
     $this->cacheBackend->delete($this);
   }
 
-  public function id() {
-    return $this->getCacheBackend()->getCacheKey($this->scheme, $this->getPath());
-  }
-
-  function __sleep() {
+  /**
+   * Implements __sleep() to not serialize the cache backend.
+   *
+   * @return array
+   *   An array of properties to sleep.
+   */
+  public function __sleep() {
     $properties = array_keys((array) $this);
     unset($properties['cacheBackend']);
     return $properties;
@@ -249,14 +257,14 @@ class CacheItem {
   /**
    * @return CacheItemBackendInterface
    */
-  public function getCacheBackend() {
+  public function getCacheItemBackend() {
     return $this->cacheBackend;
   }
 
   /**
    * @param CacheItemBackendInterface $cacheBackend
    */
-  public function setCacheBackend($cacheBackend) {
+  public function setCacheItemBackend($cacheBackend) {
     $this->cacheBackend = $cacheBackend;
   }
 

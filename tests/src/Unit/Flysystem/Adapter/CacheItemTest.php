@@ -31,6 +31,7 @@ class CacheItemTest extends UnitTestCase {
    * @covers ::getTimestamp
    * @covers ::getType
    * @covers ::getVisibility
+   * @covers ::getCacheItemBackend
    * @covers ::setMetadata
    * @covers ::setMimetype
    * @covers ::setPath
@@ -38,6 +39,7 @@ class CacheItemTest extends UnitTestCase {
    * @covers ::setTimestamp
    * @covers ::setType
    * @covers ::setVisibility
+   * @covers ::setCacheItemBackend
    */
   public function testGetSetMethods($method, $value) {
     $item = new CacheItem('testing', 'path', new CacheItemBackend(new MemoryBackend('test')));
@@ -49,6 +51,50 @@ class CacheItemTest extends UnitTestCase {
     $this->assertEquals($value, $item->$get());
   }
 
+  /**
+   * @covers ::save
+   */
+  public function testSave() {
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $item = new CacheItem('testing', 'path', $backend);
+    $backend->expects($this->once())
+      ->method('set')
+      ->with($item);
+
+    $item->save();
+  }
+
+  /**
+   * @covers ::delete
+   */
+  public function testDelete() {
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $item = new CacheItem('testing', 'path', $backend);
+    $backend->expects($this->once())
+      ->method('delete')
+      ->with($item);
+
+    $item->delete();
+  }
+
+  /**
+   * @covers::__sleep
+   */
+  public function testSleep() {
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $item = new CacheItem('testing', 'path', $backend);
+    $properties = $item->__sleep();
+    $this->assertFalse(isset($properties['cacheBackend']));
+  }
   /**
    * Return an array of all get / set methods.
    *
@@ -64,6 +110,7 @@ class CacheItemTest extends UnitTestCase {
       ['timestamp', ['timestamp']],
       ['type', 'type'],
       ['visibility', ['visibility']],
+      ['cacheItemBackend', $this->getMock('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')],
     ];
   }
 

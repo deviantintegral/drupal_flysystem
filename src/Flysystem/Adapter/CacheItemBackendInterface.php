@@ -9,4 +9,11 @@ interface CacheItemBackendInterface {
   public function delete(CacheItem $item);
 
   public function deleteMultiple($scheme, array $paths);
+
+  /**
+   * @param $scheme
+   * @param $path
+   * @return string
+   */
+  public function getCacheKey($scheme, $path);
 }

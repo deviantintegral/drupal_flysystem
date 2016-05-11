@@ -20,7 +20,6 @@ use League\Flysystem\Util;
  *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter
  *
- * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::getCachedItem
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::__construct
  */
 class DrupalCacheAdapterTest extends UnitTestCase {

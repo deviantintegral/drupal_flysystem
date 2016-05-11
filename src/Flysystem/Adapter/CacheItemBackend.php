@@ -20,7 +20,7 @@ class CacheItemBackend implements CacheItemBackendInterface {
     if ($cached = $this->cacheBackend->get($key)) {
       /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
       $item = $cached->data;
-      $item->setCacheBackend($this->cacheBackend);
+      $item->setCacheItemBackend($this->cacheBackend);
     }
     else {
       $item = new CacheItem($scheme, $path, $this->cacheBackend);
