@@ -14,6 +14,8 @@ use League\Flysystem\Util;
  *
  * @class DrupalCacheAdapterTest
  *
+ * @group flysystem
+ *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter
  *
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::getCachedItem

@@ -10,6 +10,8 @@ use Drupal\Tests\UnitTestCase;
  *
  * @class CacheItemTest
  *
+ * @group flysystem
+ *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\CacheItem
  */
 class CacheItemTest extends UnitTestCase {
