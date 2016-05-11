@@ -14,6 +14,13 @@ use League\Flysystem\Config;
 class DrupalCacheAdapter implements AdapterInterface {
 
   /**
+   * The scheme of the stream wrapper used for this adapter.
+   *
+   * @var string
+   */
+  protected $scheme;
+
+  /**
    * The flysystem adapter to cache data for.
    *
    * @var \League\Flysystem\AdapterInterface
@@ -30,12 +37,15 @@ class DrupalCacheAdapter implements AdapterInterface {
   /**
    * Construct a new caching Flysystem adapter.
    *
+   * @param string $scheme
+   *   The scheme of the stream wrapper used for this adapter.
    * @param \League\Flysystem\AdapterInterface $adapter
    *   The flysystem adapter to cache data for.
    * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
    *   The cache backend to store data in.
    */
-  public function __construct(AdapterInterface $adapter, CacheBackendInterface $cacheBackend) {
+  public function __construct($scheme, AdapterInterface $adapter, CacheBackendInterface $cacheBackend) {
+    $this->scheme = $scheme;
     $this->adapter = $adapter;
     $this->cacheBackend = $cacheBackend;
   }

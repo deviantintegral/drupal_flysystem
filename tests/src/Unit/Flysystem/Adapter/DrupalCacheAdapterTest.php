@@ -42,7 +42,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    */
   public function setup() {
     $this->cacheBackend = new MemoryBackend('test');
-    $this->adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $this->adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheBackend);
   }
 
   /**
@@ -229,11 +229,11 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ->method('has');
 
     // Populate the cache with a file.
-    $adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheBackend);
     $adapter->write('file', '', new Config());
 
     /** @var \League\Flysystem\AdapterInterface $mock_adapter */
-    $adapter = new DrupalCacheAdapter($mock_adapter, $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheBackend);
     $this->assertTrue($adapter->has('file'));
   }
 
@@ -279,6 +279,9 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   /**
    * Test methods that just wrap getMetadata().
    *
+   * @param string $method
+   *   The method to test.
+   *
    * @dataProvider methodReturnsMetadataArrayProvider
    *
    * @covers ::getMetadata
@@ -296,7 +299,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ->method($method);
 
     // Populate the adapter with a file, but then bust the cache.
-    $adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheBackend);
     $metadata = $adapter->write('test.txt', 'test', new Config());
     unset($metadata['contents']);
     $data = $this->cacheBackend->get('test.txt')->data;
@@ -307,7 +310,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");
 
     // Tests fetching from the cache.
-    $adapter = new DrupalCacheAdapter($mock_adapter, $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheBackend);
     $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test cached $method on the child adapter");
   }
 
@@ -326,7 +329,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ->method('getMimetype');
 
     // Populate the adapter with a file, but then bust the cache.
-    $adapter = new DrupalCacheAdapter(new MemoryAdapter(), $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheBackend);
     $adapter->write('test.txt', 'test', new Config());
     $data = $this->cacheBackend->get('test.txt')->data;
     $data->setMimetype([]);
@@ -339,7 +342,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
 
     // Tests fetching from the cache.
-    $adapter = new DrupalCacheAdapter($mock_adapter, $this->cacheBackend);
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheBackend);
     $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
   }
 
