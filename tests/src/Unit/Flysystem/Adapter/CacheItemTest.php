@@ -72,8 +72,8 @@ class CacheItemTest extends UnitTestCase {
    * @covers ::save
    */
   public function testSave() {
-    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
-    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend $backend */
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')
       ->disableOriginalConstructor()
       ->getMock();
 
@@ -91,8 +91,8 @@ class CacheItemTest extends UnitTestCase {
    * @covers ::delete
    */
   public function testDelete() {
-    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
-    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend $backend */
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')
       ->disableOriginalConstructor()
       ->getMock();
 
@@ -110,8 +110,8 @@ class CacheItemTest extends UnitTestCase {
    * @covers::__sleep
    */
   public function testSleep() {
-    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
-    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend $backend */
+    $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')
       ->disableOriginalConstructor()
       ->getMock();
 
@@ -135,7 +135,8 @@ class CacheItemTest extends UnitTestCase {
       ['timestamp', ['timestamp']],
       ['type', 'type'],
       ['visibility', ['visibility']],
-      ['cacheItemBackend', $this->getMock('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')],
+      ['cacheItemBackend', $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')->disableOriginalConstructor()->getMock(),
+      ],
     ];
   }
 

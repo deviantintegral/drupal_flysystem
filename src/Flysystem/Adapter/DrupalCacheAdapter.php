@@ -40,10 +40,10 @@ class DrupalCacheAdapter implements AdapterInterface {
    *   The scheme of the stream wrapper used for this adapter.
    * @param \League\Flysystem\AdapterInterface $adapter
    *   The flysystem adapter to cache data for.
-   * @param \Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $cacheItemBackend
+   * @param \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend $cacheItemBackend
    *   The cache backend to store data in.
    */
-  public function __construct($scheme, AdapterInterface $adapter, CacheItemBackendInterface $cacheItemBackend) {
+  public function __construct($scheme, AdapterInterface $adapter, CacheItemBackend $cacheItemBackend) {
     $this->scheme = $scheme;
     $this->adapter = $adapter;
     $this->cacheItemBackend = $cacheItemBackend;

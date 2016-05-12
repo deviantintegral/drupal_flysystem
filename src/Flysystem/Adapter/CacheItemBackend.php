@@ -11,7 +11,7 @@ use Drupal\Core\Cache\CacheBackendInterface;
  * saving, and deleting separately from the logic to reach back to a child
  * Flysystem adapter.
  */
-class CacheItemBackend implements CacheItemBackendInterface {
+class CacheItemBackend {
 
   /**
    * The Drupal cache backend to store data in.
