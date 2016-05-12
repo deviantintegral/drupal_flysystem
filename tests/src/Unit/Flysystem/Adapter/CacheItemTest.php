@@ -21,6 +21,11 @@ class CacheItemTest extends UnitTestCase {
   /**
    * Test all get and set methods.
    *
+   * @param string $method
+   *   The method to test.
+   * @param mixed $value
+   *   The value to use.
+   *
    * @dataProvider getSetMethodsProvider
    *
    * @covers ::__construct
@@ -52,6 +57,8 @@ class CacheItemTest extends UnitTestCase {
   }
 
   /**
+   * Test getting the cache item scheme.
+   *
    * @covers ::getScheme
    */
   public function testGetScheme() {
@@ -60,9 +67,12 @@ class CacheItemTest extends UnitTestCase {
   }
 
   /**
+   * Test saving a cache item.
+   *
    * @covers ::save
    */
   public function testSave() {
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
     $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
       ->disableOriginalConstructor()
       ->getMock();
@@ -76,9 +86,12 @@ class CacheItemTest extends UnitTestCase {
   }
 
   /**
+   * Test deleting a cache item.
+   *
    * @covers ::delete
    */
   public function testDelete() {
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
     $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
       ->disableOriginalConstructor()
       ->getMock();
@@ -92,9 +105,12 @@ class CacheItemTest extends UnitTestCase {
   }
 
   /**
+   * Test removing the cache backend when saving.
+   *
    * @covers::__sleep
    */
   public function testSleep() {
+    /** @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface $backend */
     $backend = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackendInterface')
       ->disableOriginalConstructor()
       ->getMock();
