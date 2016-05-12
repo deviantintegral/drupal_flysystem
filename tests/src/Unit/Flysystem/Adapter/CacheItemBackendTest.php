@@ -9,6 +9,8 @@ use Drupal\Tests\UnitTestCase;
 /**
  * @class CacheItemBackendTest
  *
+ * @group flysystem
+ *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
  * @covers ::__construct
  */
@@ -29,12 +31,16 @@ class CacheItemBackendTest extends UnitTestCase {
     $this->cacheItemBackend = new CacheItemBackend($this->cacheBackend);
   }
 
+  /**
+   * @covers ::load
+   */
   public function testLoad() {
-    $this->cacheBackend->expects($this->once())
+    $cache_item = $this->getCacheItemStub();
+    $cache_item->expects($this->once())
       ->method('setCacheItemBackend');
 
     $cached = new \stdClass();
-    $cached->data = new CacheItem('test', 'test', $this->cacheItemBackend);
+    $cached->data = $cache_item;
 
     $this->cacheBackend->expects($this->once())
       ->method('get')
@@ -44,11 +50,25 @@ class CacheItemBackendTest extends UnitTestCase {
     $this->assertInstanceOf('\Drupal\flysystem\Flysystem\Adapter\CacheItem', $item);
   }
 
+  /**
+   * @covers ::load
+   */
   public function testLoadMiss() {
-    $this->cacheBackend->expects($this->never())
+    $cache_item = $this->getCacheItemStub();
+    $cache_item->expects($this->never())
       ->method('setCacheItemBackend');
 
     $item = $this->cacheItemBackend->load('test-scheme', 'test');
     $this->assertInstanceOf('\Drupal\flysystem\Flysystem\Adapter\CacheItem', $item);
+  }
+
+  /**
+   * @return \PHPUnit_Framework_MockObject_MockObject
+   */
+  private function getCacheItemStub() {
+    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
+      ->setConstructorArgs(['test', 'test', $this->cacheItemBackend])
+      ->getMock();
+    return $cache_item;
   }
 }

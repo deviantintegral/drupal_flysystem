@@ -29,7 +29,7 @@ class CacheItem {
   /**
    * @var CacheItemBackendInterface
    */
-  protected $cacheBackend;
+  protected $cacheItemBackend;
 
   /**
    * The array of metadata for the item.
@@ -80,12 +80,12 @@ class CacheItem {
    *   The scheme of the stream wrapper used for this cache item.
    * @param string $path
    *   The path of the item.
-   * @param CacheItemBackendInterface $cacheBackend
+   * @param CacheItemBackendInterface $cacheItemBackend
    */
-  public function __construct($scheme, $path, CacheItemBackendInterface $cacheBackend) {
+  public function __construct($scheme, $path, CacheItemBackendInterface $cacheItemBackend) {
     $this->scheme = $scheme;
     $this->path = $path;
-    $this->cacheBackend = $cacheBackend;
+    $this->cacheItemBackend = $cacheItemBackend;
   }
 
   /**
@@ -232,14 +232,14 @@ class CacheItem {
    * Save this cache item.
    */
   public function save() {
-    $this->cacheBackend->set($this);
+    $this->cacheItemBackend->set($this);
   }
 
   /**
    * Delete this cache item.
    */
   public function delete() {
-    $this->cacheBackend->delete($this);
+    $this->cacheItemBackend->delete($this);
   }
 
   /**
@@ -258,14 +258,14 @@ class CacheItem {
    * @return CacheItemBackendInterface
    */
   public function getCacheItemBackend() {
-    return $this->cacheBackend;
+    return $this->cacheItemBackend;
   }
 
   /**
    * @param CacheItemBackendInterface $cacheBackend
    */
   public function setCacheItemBackend($cacheBackend) {
-    $this->cacheBackend = $cacheBackend;
+    $this->cacheItemBackend = $cacheBackend;
   }
 
 }
