@@ -29,7 +29,7 @@ class CacheItemBackend implements CacheItemBackendInterface {
     if ($cached = $this->cacheBackend->get($key)) {
       /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
       $item = $cached->data;
-      $item->setCacheItemBackend($this->cacheBackend);
+      $item->setCacheItemBackend($this);
     }
     else {
       $item = new CacheItem($scheme, $path, $this);
@@ -54,7 +54,7 @@ class CacheItemBackend implements CacheItemBackendInterface {
   }
 
   /**
-   *
+   * Delete an item by a key, saving having to load an item to delete it.
    */
   public function deleteByKey($scheme, $path) {
     $this->deleteMultiple($scheme, [$path]);

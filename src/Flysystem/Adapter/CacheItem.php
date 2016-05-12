@@ -27,6 +27,8 @@ class CacheItem {
   protected $path;
 
   /**
+   * The cache backend.
+   *
    * @var CacheItemBackendInterface
    */
   protected $cacheItemBackend;
@@ -81,6 +83,7 @@ class CacheItem {
    * @param string $path
    *   The path of the item.
    * @param CacheItemBackendInterface $cacheItemBackend
+   *   The cache item backend to use.
    */
   public function __construct($scheme, $path, CacheItemBackendInterface $cacheItemBackend) {
     $this->scheme = $scheme;
@@ -255,21 +258,33 @@ class CacheItem {
   }
 
   /**
+   * Return the cache item backend.
+   *
    * @return CacheItemBackendInterface
+   *   Returns the cache item backend.
    */
   public function getCacheItemBackend() {
     return $this->cacheItemBackend;
   }
 
   /**
-   * @param CacheItemBackendInterface $cacheBackend
+   * Set the cache item backend.
+   *
+   * We can't just use constructor injection because we need to associate this
+   * after a __wakeup() call.
+   *
+   * @param CacheItemBackendInterface $cacheItemBackend
+   *   The new cache item backend.
    */
-  public function setCacheItemBackend($cacheBackend) {
-    $this->cacheItemBackend = $cacheBackend;
+  public function setCacheItemBackend(CacheItemBackendInterface $cacheItemBackend) {
+    $this->cacheItemBackend = $cacheItemBackend;
   }
 
   /**
+   * Return the scheme associated with this cache item.
+   *
    * @return string
+   *   The scheme associated with this cache item.
    */
   public function getScheme() {
     return $this->scheme;

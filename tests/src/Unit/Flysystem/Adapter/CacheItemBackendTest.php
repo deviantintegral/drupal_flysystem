@@ -6,27 +6,34 @@ use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\Tests\UnitTestCase;
 
 /**
+ * Tests CacheItemBackend.
+ *
  * @class CacheItemBackendTest
  *
  * @group flysystem
  *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
+ *
  * @covers ::__construct
  */
 class CacheItemBackendTest extends UnitTestCase {
 
   /**
-   * @var \PHPUnit_Framework_MockObject_MockObject
+   * A cache backend implementing \Drupal\Core\Cache\CacheBackendInterface.
+   *
+   * @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\Core\Cache\CacheBackendInterface
    */
   protected $cacheBackend;
 
   /**
+   * The cache item backend to test.
+   *
    * @var \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
    */
   protected $cacheItemBackend;
 
   /**
-   *
+   * Sets up the cache item backend with a mock cache backend.
    */
   public function setup() {
     $this->cacheBackend = $this->getMock('\Drupal\Core\Cache\CacheBackendInterface');
@@ -34,6 +41,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Test loading a cache item from the cache.
+   *
    * @covers ::load
    */
   public function testLoad() {
@@ -53,6 +62,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Test when loading a cache item creates a new item.
+   *
    * @covers ::load
    */
   public function testLoadMiss() {
@@ -65,6 +76,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Tests the set() method.
+   *
    * @covers ::set
    */
   public function testSet() {
@@ -77,6 +90,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Tests the delete() method.
+   *
    * @covers ::delete
    */
   public function testDelete() {
@@ -94,6 +109,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Tests deleting by a key.
+   *
    * @covers ::deleteByKey
    */
   public function testDeleteByKey() {
@@ -111,6 +128,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Test deleting multiple items at once.
+   *
    * @covers ::deleteMultiple
    */
   public function testDeleteMultiple() {
@@ -137,6 +156,8 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Tests generation of a hashed cache key.
+   *
    * @covers ::getCacheKey
    */
   public function testGetCacheKey() {
@@ -144,7 +165,15 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * Helper to return a stub cache item.
+   *
+   * @param string $scheme
+   *   (optional) The scheme for the cache item.
+   * @param string $path
+   *   (optional) The path for the cache item.
+   *
    * @return \PHPUnit_Framework_MockObject_MockObject
+   *   The stub cache item.
    */
   private function getCacheItemStub($scheme = 'test', $path = 'test') {
     $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
