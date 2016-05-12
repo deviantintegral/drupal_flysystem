@@ -23,7 +23,7 @@ class CacheItemBackend implements CacheItemBackendInterface {
       $item->setCacheItemBackend($this->cacheBackend);
     }
     else {
-      $item = new CacheItem($scheme, $path, $this->cacheBackend);
+      $item = new CacheItem($scheme, $path, $this);
     }
 
     return $item;
