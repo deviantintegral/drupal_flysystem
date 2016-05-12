@@ -103,6 +103,7 @@ class CacheItemTest extends UnitTestCase {
     $properties = $item->__sleep();
     $this->assertFalse(isset($properties['cacheBackend']));
   }
+
   /**
    * Return an array of all get / set methods.
    *

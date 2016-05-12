@@ -2,8 +2,6 @@
 
 namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
-use Drupal\Core\Cache\MemoryBackend;
-use Drupal\flysystem\Flysystem\Adapter\CacheItem;
 use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
 use Drupal\Tests\UnitTestCase;
@@ -439,7 +437,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
 
     // Tests fetching from the child adapter.
     // $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
-    //$this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");
+    // $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");.
   }
 
   /**
@@ -484,8 +482,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
 
     // Populate the adapter with a file, but then bust the cache.
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
-    //$metadata = $adapter->write('test.txt', 'test', new Config());
-
+    // $metadata = $adapter->write('test.txt', 'test', new Config());
     // Tests fetching from the child adapter.
     $this->assertEquals(['metadata'], $adapter->$get_method('test.txt'), "Test calling $get_method on the child adapter");
   }
@@ -567,6 +564,9 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     ];
   }
 
+  /**
+   *
+   */
   protected function getCacheItemBackendStub() {
     $stub = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')
       ->disableOriginalConstructor()

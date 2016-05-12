@@ -294,7 +294,7 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getTimestamp($path) {
-      if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
+    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
       if ($timestamp = $item->getTimestamp()) {
         return $timestamp;
       }

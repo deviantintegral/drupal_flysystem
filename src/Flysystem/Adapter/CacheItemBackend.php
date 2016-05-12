@@ -4,6 +4,9 @@ namespace Drupal\flysystem\Flysystem\Adapter;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 
+/**
+ *
+ */
 class CacheItemBackend implements CacheItemBackendInterface {
 
   /**
@@ -11,10 +14,16 @@ class CacheItemBackend implements CacheItemBackendInterface {
    */
   protected $cacheBackend;
 
+  /**
+   *
+   */
   public function __construct(CacheBackendInterface $cacheBackend) {
     $this->cacheBackend = $cacheBackend;
   }
 
+  /**
+   *
+   */
   public function load($scheme, $path) {
     $key = $this->getCacheKey($scheme, $path);
     if ($cached = $this->cacheBackend->get($key)) {
@@ -29,19 +38,31 @@ class CacheItemBackend implements CacheItemBackendInterface {
     return $item;
   }
 
+  /**
+   *
+   */
   public function set(CacheItem $item) {
     $key = $this->getCacheKey($item->getScheme(), $item->getPath());
     $this->cacheBackend->set($key, $item);
   }
 
+  /**
+   *
+   */
   public function delete(CacheItem $item) {
     $this->deleteByKey($item->getScheme(), $item->getPath());
   }
 
+  /**
+   *
+   */
   public function deleteByKey($scheme, $path) {
     $this->deleteMultiple($scheme, [$path]);
   }
 
+  /**
+   *
+   */
   public function deleteMultiple($scheme, array $paths) {
     $keys = array();
     foreach ($paths as $path) {
@@ -50,6 +71,9 @@ class CacheItemBackend implements CacheItemBackendInterface {
     $this->cacheBackend->deleteMultiple($keys);
   }
 
+  /**
+   *
+   */
   public function getCacheKey($scheme, $path) {
     $key = "$scheme://$path";
     return md5($key);

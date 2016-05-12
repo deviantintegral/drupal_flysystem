@@ -2,7 +2,6 @@
 
 namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
-use Drupal\flysystem\Flysystem\Adapter\CacheItem;
 use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\Tests\UnitTestCase;
 
@@ -26,6 +25,9 @@ class CacheItemBackendTest extends UnitTestCase {
    */
   protected $cacheItemBackend;
 
+  /**
+   *
+   */
   public function setup() {
     $this->cacheBackend = $this->getMock('\Drupal\Core\Cache\CacheBackendInterface');
     $this->cacheItemBackend = new CacheItemBackend($this->cacheBackend);
@@ -155,4 +157,5 @@ class CacheItemBackendTest extends UnitTestCase {
 
     return $cache_item;
   }
+
 }
