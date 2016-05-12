@@ -268,4 +268,11 @@ class CacheItem {
     $this->cacheItemBackend = $cacheBackend;
   }
 
+  /**
+   * @return string
+   */
+  public function getScheme() {
+    return $this->scheme;
+  }
+
 }

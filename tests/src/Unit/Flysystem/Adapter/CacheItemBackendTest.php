@@ -22,7 +22,7 @@ class CacheItemBackendTest extends UnitTestCase {
   protected $cacheBackend;
 
   /**
-   * @var \PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
    */
   protected $cacheItemBackend;
 
@@ -63,12 +63,29 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::set
+   */
+  public function testSet() {
+    $cache_item = $this->getCacheItemStub();
+    $this->cacheBackend->expects($this->once())
+      ->method('set')
+      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
+
+    $this->cacheItemBackend->set($cache_item);
+  }
+
+  /**
    * @return \PHPUnit_Framework_MockObject_MockObject
    */
   private function getCacheItemStub() {
     $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
       ->setConstructorArgs(['test', 'test', $this->cacheItemBackend])
       ->getMock();
+    $cache_item->method('getScheme')
+      ->willReturn('test');
+    $cache_item->method('getPath')
+      ->willReturn('test');
+
     return $cache_item;
   }
 }
