@@ -21,6 +21,7 @@ use League\Flysystem\Util;
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter
  *
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::__construct
+ * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::getScheme
  */
 class DrupalCacheAdapterTest extends UnitTestCase {
 
@@ -59,6 +60,11 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertInternalType('array', $metadata);
   }
 
+  /**
+   * Test writes to the child adapter.
+   *
+   * @covers ::write
+   */
   public function testWriteFails() {
     $this->expectMetadataSaves('block-directory', 1);
 
@@ -80,6 +86,11 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     fclose($file);
   }
 
+  /**
+   * Test stream writes.
+   *
+   * @covers ::writeStream
+   */
   public function testWriteStreamFails() {
     $this->expectMetadataSaves('block-directory', 1);
     $file = fopen('php://memory', 'rw+');
@@ -194,6 +205,9 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertTrue($result);
   }
 
+  /**
+   * @covers ::copy
+   */
   public function testCopyFails() {
     $this->expectMetadataSaves('block-directory', 1);
     $this->cacheItemBackend->expects($this->never())
@@ -219,6 +233,9 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $this->assertTrue($result);
   }
 
+  /**
+   * @covers ::delete
+   */
   public function testDeleteFails() {
     $this->cacheItemBackend->expects($this->never())
       ->method('deleteByKey');
@@ -393,10 +410,13 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::getTimestamp
    * @covers ::getVisibility
    */
-  public function _testGetMetadataMethods($method) {
+  public function testGetMetadataMethods($method) {
+    $method = 'get' . ucfirst($method);
     $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
       ->disableOriginalConstructor()
       ->getMock();
+    $cache_item->method($method)
+      ->willReturn(['metadata']);
     $this->cacheItemBackend->method('load')
       ->willReturn($cache_item);
 
@@ -405,22 +425,69 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
       ->disableOriginalConstructor()
       ->getMock();
+    $mock_adapter->method('write')
+      ->willReturn(['metadata']);
     $mock_adapter->expects($this->never())
       ->method($method);
 
     // Populate the adapter with a file, but then bust the cache.
-    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheItemBackend);
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
     $metadata = $adapter->write('test.txt', 'test', new Config());
-    unset($metadata['contents']);
-    $data = $this->cacheItemBackend->get('test.txt')->data;
-    $this->cacheItemBackend->set('test.txt', $data);
-
-    // Tests fetching from the child adapter.
-    $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");
 
     // Tests fetching from the cache.
-    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
     $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test cached $method on the child adapter");
+
+    // Tests fetching from the child adapter.
+    // $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
+    //$this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");
+  }
+
+  /**
+   * Test methods that just wrap getMetadata().
+   *
+   * @param string $method
+   *   The method to test.
+   *
+   * @dataProvider methodReturnsMetadataArrayProvider
+   *
+   * @covers ::getMetadata
+   * @covers ::getSize
+   * @covers ::getTimestamp
+   * @covers ::getVisibility
+   */
+  public function testGetMetadataMethodsCacheMiss($method) {
+    $get_method = 'get' . ucfirst($method);
+    $set_method = 'set' . ucfirst($method);
+
+    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $cache_item->expects($this->once())
+      ->method($set_method);
+    $cache_item->expects($this->once())
+      ->method('save');
+    $cache_item->method($get_method)
+      ->willReturn(FALSE);
+
+    $this->cacheItemBackend->method('load')
+      ->willReturn($cache_item);
+
+    // Test that when we have a cache item that we don't call the child
+    // adapter.
+    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $mock_adapter->method($get_method)
+      ->willReturn(['metadata']);
+    $mock_adapter->expects($this->once())
+      ->method($get_method);
+
+    // Populate the adapter with a file, but then bust the cache.
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
+    //$metadata = $adapter->write('test.txt', 'test', new Config());
+
+    // Tests fetching from the child adapter.
+    $this->assertEquals(['metadata'], $adapter->$get_method('test.txt'), "Test calling $get_method on the child adapter");
   }
 
   /**
@@ -428,7 +495,18 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    *
    * @covers ::getMimetype
    */
-  public function _testGetMimetype() {
+  public function testGetMimetype() {
+    $mimetype = [
+      'mimetype' => Util::guessMimeType('test.txt', 'test'),
+      'path' => 'test.txt',
+    ];
+    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $cache_item->method('getMimetype')
+      ->willReturn($mimetype);
+    $this->cacheItemBackend->method('load')
+      ->willReturn($cache_item);
     // Test that when we have a cache item that we don't call the child
     // adapter.
     $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
@@ -438,17 +516,36 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ->method('getMimetype');
 
     // Populate the adapter with a file, but then bust the cache.
-    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheItemBackend);
-    $adapter->write('test.txt', 'test', new Config());
-    $data = $this->cacheItemBackend->get('test.txt')->data;
-    $data->setMimetype([]);
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
+
+    // Tests fetching from the cache.
+    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
+    $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
+  }
+
+  /**
+   * @covers ::getMimeType
+   */
+  public function testGetMimetypeMiss() {
     $mimetype = [
       'mimetype' => Util::guessMimeType('test.txt', 'test'),
       'path' => 'test.txt',
     ];
-
-    // Tests fetching from the child adapter.
-    $this->assertEquals($mimetype, $adapter->getMimetype('test.txt'));
+    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $cache_item->method('getMimetype')
+      ->willReturn(FALSE);
+    $this->cacheItemBackend->method('load')
+      ->willReturn($cache_item);
+    // Test that when we have a cache item that we don't call the child
+    // adapter.
+    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $mock_adapter->expects($this->once())
+      ->method('getMimetype')
+      ->willReturn($mimetype);
 
     // Tests fetching from the cache.
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
@@ -463,10 +560,10 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    */
   public function methodReturnsMetadataArrayProvider() {
     return [
-      ['getMetadata'],
-      ['getSize'],
-      ['getTimestamp'],
-      ['getVisibility'],
+      ['metadata'],
+      ['size'],
+      ['timestamp'],
+      ['visibility'],
     ];
   }
 

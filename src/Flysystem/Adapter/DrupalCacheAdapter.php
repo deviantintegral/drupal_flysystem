@@ -329,15 +329,8 @@ class DrupalCacheAdapter implements AdapterInterface {
   /**
    * @return string
    */
-  public function getScheme() {
+  private function getScheme() {
     return $this->scheme;
-  }
-
-  /**
-   * @param string $scheme
-   */
-  public function setScheme($scheme) {
-    $this->scheme = $scheme;
   }
 
 }
