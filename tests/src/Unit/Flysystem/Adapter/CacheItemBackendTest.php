@@ -75,16 +75,83 @@ class CacheItemBackendTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::delete
+   */
+  public function testDelete() {
+    $cache_item = $this->getCacheItemStub();
+    $cache_item->expects($this->never())
+      ->method('setCacheItemBackend');
+
+    $this->cacheBackend->expects($this->once())
+      ->method('set')
+      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
+
+    $this->cacheItemBackend->set($cache_item);
+    $this->cacheItemBackend->delete($cache_item);
+    $this->cacheItemBackend->load('test', 'test');
+  }
+
+  /**
+   * @covers ::deleteByKey
+   */
+  public function testDeleteByKey() {
+    $cache_item = $this->getCacheItemStub();
+    $cache_item->expects($this->never())
+      ->method('setCacheItemBackend');
+
+    $this->cacheBackend->expects($this->once())
+      ->method('set')
+      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
+
+    $this->cacheItemBackend->set($cache_item);
+    $this->cacheItemBackend->deleteByKey('test', 'test');
+    $this->cacheItemBackend->load('test', 'test');
+  }
+
+  /**
+   * @covers ::deleteMultiple
+   */
+  public function testDeleteMultiple() {
+    $cache_item_one = $this->getCacheItemStub('test', 'one');
+    $cache_item_one->expects($this->never())
+      ->method('setCacheItemBackend');
+
+    $cache_item_two = $this->getCacheItemStub('test', 'two');
+    $cache_item_two->expects($this->never())
+      ->method('setCacheItemBackend');
+
+    $this->cacheBackend->expects($this->exactly(2))
+      ->method('set')
+      ->withConsecutive(
+        [$this->cacheItemBackend->getCacheKey('test', 'one'), $cache_item_one],
+        [$this->cacheItemBackend->getCacheKey('test', 'two'), $cache_item_two]
+      );
+
+    $this->cacheItemBackend->set($cache_item_one);
+    $this->cacheItemBackend->set($cache_item_two);
+    $this->cacheItemBackend->deleteMultiple('test', ['one', 'two']);
+    $this->cacheItemBackend->load('test', 'one');
+    $this->cacheItemBackend->load('test', 'two');
+  }
+
+  /**
+   * @covers ::getCacheKey
+   */
+  public function testGetCacheKey() {
+    $this->assertEquals(md5("testing://test.txt"), $this->cacheItemBackend->getCacheKey('testing', 'test.txt'));
+  }
+
+  /**
    * @return \PHPUnit_Framework_MockObject_MockObject
    */
-  private function getCacheItemStub() {
+  private function getCacheItemStub($scheme = 'test', $path = 'test') {
     $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->setConstructorArgs(['test', 'test', $this->cacheItemBackend])
+      ->setConstructorArgs([$scheme, $path, $this->cacheItemBackend])
       ->getMock();
     $cache_item->method('getScheme')
-      ->willReturn('test');
+      ->willReturn($scheme);
     $cache_item->method('getPath')
-      ->willReturn('test');
+      ->willReturn($path);
 
     return $cache_item;
   }

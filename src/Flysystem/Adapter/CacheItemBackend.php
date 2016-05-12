@@ -35,7 +35,11 @@ class CacheItemBackend implements CacheItemBackendInterface {
   }
 
   public function delete(CacheItem $item) {
-    $key = $this->deleteByKey($item->getScheme(), $item->getPath());
+    $this->deleteByKey($item->getScheme(), $item->getPath());
+  }
+
+  public function deleteByKey($scheme, $path) {
+    $this->deleteMultiple($scheme, [$path]);
   }
 
   public function deleteMultiple($scheme, array $paths) {
@@ -44,11 +48,6 @@ class CacheItemBackend implements CacheItemBackendInterface {
       $keys[] = $this->getCacheKey($scheme, $path);
     }
     $this->cacheBackend->deleteMultiple($keys);
-  }
-
-  public function deleteByKey($scheme, $path) {
-    $key = $this->getCacheKey($scheme, $path);
-    $this->cacheBackend->delete($key);
   }
 
   public function getCacheKey($scheme, $path) {
