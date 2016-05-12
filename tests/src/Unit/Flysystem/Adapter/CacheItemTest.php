@@ -52,6 +52,14 @@ class CacheItemTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::getScheme
+   */
+  public function testGetScheme() {
+    $item = new CacheItem('testing', 'path', new CacheItemBackend(new MemoryBackend('test')));
+    $this->assertEquals('testing', $item->getScheme());
+  }
+
+  /**
    * @covers ::save
    */
   public function testSave() {
