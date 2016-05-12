@@ -2,7 +2,6 @@
 
 namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
-use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter;
 use Drupal\Tests\UnitTestCase;
 use League\Flysystem\Config;
@@ -33,10 +32,13 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   /**
    * The flysystem backend for testing.
    *
-   * @var \PHPUnit_Framework_MockObject_MockObject
+   * @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
    */
   protected $cacheItemBackend;
 
+  /**
+   * URI scheme to use for testing.
+   */
   const SCHEME = 'test-scheme';
 
   /**
@@ -59,7 +61,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
-   * Test writes to the child adapter.
+   * Test failing writes to the child adapter.
    *
    * @covers ::write
    */
@@ -85,7 +87,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
-   * Test stream writes.
+   * Test failing stream writes.
    *
    * @covers ::writeStream
    */
@@ -135,9 +137,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::rename
    */
   public function testRename() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->expects($this->once())
       ->method('getMetadata');
     $cache_item->expects($this->exactly(3))
@@ -164,10 +164,12 @@ class DrupalCacheAdapterTest extends UnitTestCase {
 
     $metadata = $this->adapter->write('test.txt', 'test', new Config());
 
+    // Test a normal rename.
     $result = $this->adapter->rename('test.txt', 'rename.txt');
     $this->assertTrue($result);
     $metadata['path'] = 'rename.txt';
 
+    // Test a failing rename.
     $this->adapter->write('block-directory', '', new Config());
     $result = $this->adapter->rename('rename.txt', 'block-directory/rename.txt');
     $this->assertFalse($result);
@@ -179,9 +181,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::copy
    */
   public function testCopy() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->expects($this->exactly(2))
       ->method('setMetadata');
     $cache_item->expects($this->exactly(2))
@@ -204,6 +204,8 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
+   * Test when a copy fails.
+   *
    * @covers ::copy
    */
   public function testCopyFails() {
@@ -232,6 +234,8 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
+   * Test when deleting fails.
+   *
    * @covers ::delete
    */
   public function testDeleteFails() {
@@ -248,11 +252,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::deleteDir
    */
   public function testDeleteDir() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
 
     $expected = [
       'directory/test.txt',
@@ -263,6 +263,8 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ->method('deleteMultiple')
       ->with(static::SCHEME, $expected);
 
+    // Ensure that all directory contents are removed from the cache, but that
+    // other files are preserved.
     $this->adapter->write('directory/test.txt', 'test', new Config());
     $this->adapter->write('directory/subdirectory/test.txt', 'test', new Config());
     $this->adapter->write('test.txt', 'test', new Config());
@@ -280,11 +282,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::createDir
    */
   public function testCreateDir() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
     $metadata = $this->adapter->createDir('directory', new Config());
     $this->assertInternalType('array', $metadata);
     $this->adapter->write('file', '', new Config());
@@ -298,11 +296,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::setVisibility
    */
   public function testSetVisibility() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
     $this->adapter->write('file', '', new Config());
     $metadata = $this->adapter->setVisibility('file', ['hidden']);
     $this->assertEquals($metadata, $this->adapter->getVisibility('file'));
@@ -318,23 +312,13 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   public function testHas() {
     $this->assertFalse($this->adapter->has('does-not-exist'));
 
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
 
     // Test that when we have a cache item that we don't call the child
     // adapter.
-    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->expects($this->never())
       ->method('has');
-
-    // Populate the cache with a file.
-    $adapter = new DrupalCacheAdapter('memory', new MemoryAdapter(), $this->cacheItemBackend);
-    $adapter->write('file', '', new Config());
 
     /** @var \League\Flysystem\AdapterInterface $mock_adapter */
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
@@ -347,11 +331,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::read
    */
   public function testRead() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
     $this->adapter->write('test.txt', 'test', new Config());
     $this->assertEquals('test', $this->adapter->read('test.txt')['contents']);
   }
@@ -362,11 +342,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::readStream
    */
   public function testReadStream() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
     $this->adapter->write('test.txt', 'test', new Config());
     $stream = $this->adapter->readStream('test.txt')['stream'];
     $this->assertInternalType('resource', $stream);
@@ -378,11 +354,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::listContents
    */
   public function testListContents() {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoadStubItem();
     $this->adapter->write('test.txt', 'test', new Config());
     $this->adapter->createDir('directory/subdirectory', new Config());
     $contents = $this->adapter->listContents('', TRUE);
@@ -410,19 +382,14 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    */
   public function testGetMetadataMethods($method) {
     $method = 'get' . ucfirst($method);
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->method($method)
       ->willReturn(['metadata']);
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoad($cache_item);
 
     // Test that when we have a cache item that we don't call the child
     // adapter.
-    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->method('write')
       ->willReturn(['metadata']);
     $mock_adapter->expects($this->never())
@@ -434,10 +401,6 @@ class DrupalCacheAdapterTest extends UnitTestCase {
 
     // Tests fetching from the cache.
     $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test cached $method on the child adapter");
-
-    // Tests fetching from the child adapter.
-    // $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
-    // $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test calling $method on the child adapter");.
   }
 
   /**
@@ -457,9 +420,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $get_method = 'get' . ucfirst($method);
     $set_method = 'set' . ucfirst($method);
 
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->expects($this->once())
       ->method($set_method);
     $cache_item->expects($this->once())
@@ -467,22 +428,18 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     $cache_item->method($get_method)
       ->willReturn(FALSE);
 
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoad($cache_item);
 
     // Test that when we have a cache item that we don't call the child
     // adapter.
-    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->method($get_method)
       ->willReturn(['metadata']);
     $mock_adapter->expects($this->once())
       ->method($get_method);
 
-    // Populate the adapter with a file, but then bust the cache.
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
-    // $metadata = $adapter->write('test.txt', 'test', new Config());
+
     // Tests fetching from the child adapter.
     $this->assertEquals(['metadata'], $adapter->$get_method('test.txt'), "Test calling $get_method on the child adapter");
   }
@@ -497,23 +454,15 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       'mimetype' => Util::guessMimeType('test.txt', 'test'),
       'path' => 'test.txt',
     ];
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->method('getMimetype')
       ->willReturn($mimetype);
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoad($cache_item);
     // Test that when we have a cache item that we don't call the child
     // adapter.
-    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->expects($this->never())
       ->method('getMimetype');
-
-    // Populate the adapter with a file, but then bust the cache.
-    $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
 
     // Tests fetching from the cache.
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
@@ -521,6 +470,8 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
+   * Test when mimetypes aren't in the cache.
+   *
    * @covers ::getMimeType
    */
   public function testGetMimetypeMiss() {
@@ -528,18 +479,13 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       'mimetype' => Util::guessMimeType('test.txt', 'test'),
       'path' => 'test.txt',
     ];
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $cache_item = $this->getCacheItemStub();
     $cache_item->method('getMimetype')
       ->willReturn(FALSE);
-    $this->cacheItemBackend->method('load')
-      ->willReturn($cache_item);
+    $this->cacheItemBackendLoad($cache_item);
     // Test that when we have a cache item that we don't call the child
     // adapter.
-    $mock_adapter = $this->getMockBuilder('\League\Flysystem\AdapterInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
+    $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->expects($this->once())
       ->method('getMimetype')
       ->willReturn($mimetype);
@@ -565,7 +511,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
-   *
+   * Return a stub CacheItemBackend.
    */
   protected function getCacheItemBackendStub() {
     $stub = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')
@@ -575,13 +521,15 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
-   * @param $filename
-   * @param $count
+   * Set an expectation that metadata for a file is saved a set number of times.
+   *
+   * @param string $path
+   *   The path to expect saves on.
+   * @param int $count
+   *   The number of saves to expect.
    */
-  private function expectMetadataSaves($filename, $count) {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->disableOriginalConstructor()
-      ->getMock();
+  private function expectMetadataSaves($path, $count) {
+    $cache_item = $this->getCacheItemStub();
     $cache_item->expects($this->exactly($count))
       ->method('setMetadata');
     $cache_item->expects($this->exactly($count))
@@ -589,7 +537,50 @@ class DrupalCacheAdapterTest extends UnitTestCase {
 
     $this->cacheItemBackend->expects($this->exactly($count))
       ->method('load')
-      ->with(static::SCHEME, $filename)
+      ->with(static::SCHEME, $path)
+      ->willReturn($cache_item);
+  }
+
+  /**
+   * Return a stub Flysystem adapter.
+   *
+   * @return \PHPUnit_Framework_MockObject_MockObject|\League\Flysystem\AdapterInterface
+   *   Return a new adapter stub.
+   */
+  protected function getFlysystemAdapterStub() {
+    return $this->getMockBuilder('\League\Flysystem\AdapterInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+  }
+
+  /**
+   * Return a stub cache item.
+   *
+   * @return \PHPUnit_Framework_MockObject_MockObject|\Drupal\flysystem\Flysystem\Adapter\CacheItem
+   *   Return a new cache item stub.
+   */
+  protected function getCacheItemStub() {
+    return $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
+      ->disableOriginalConstructor()
+      ->getMock();
+  }
+
+  /**
+   * Load a stub item into the cache.
+   */
+  protected function cacheItemBackendLoadStubItem() {
+    $cache_item = $this->getCacheItemStub();
+    $this->cacheItemBackendLoad($cache_item);
+  }
+
+  /**
+   * Load a specific cache item into the cache.
+   *
+   * @param mixed $cache_item
+   *   The cache item to load.
+   */
+  protected function cacheItemBackendLoad($cache_item) {
+    $this->cacheItemBackend->method('load')
       ->willReturn($cache_item);
   }
 
