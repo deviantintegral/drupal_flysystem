@@ -18,7 +18,6 @@ use League\Flysystem\Util;
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter
  *
  * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::__construct
- * @covers \Drupal\flysystem\Flysystem\Adapter\DrupalCacheAdapter::getScheme
  */
 class DrupalCacheAdapterTest extends UnitTestCase {
 
