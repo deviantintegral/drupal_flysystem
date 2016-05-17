@@ -41,27 +41,6 @@ class CacheItem {
   protected $metadata;
 
   /**
-   * The array of MIME information for the item.
-   *
-   * @var array
-   */
-  protected $mimetype;
-
-  /**
-   * The array of size information for the item.
-   *
-   * @var array
-   */
-  protected $size;
-
-  /**
-   * The array of timestamp information for the item.
-   *
-   * @var array
-   */
-  protected $timestamp;
-
-  /**
    * The type of the item.
    *
    * @var string
@@ -109,66 +88,6 @@ class CacheItem {
    */
   public function setMetadata($metadata) {
     $this->metadata = $metadata;
-  }
-
-  /**
-   * Get the MIME type information for the item.
-   *
-   * @return array
-   *   The array of MIME type information for the item.
-   */
-  public function getMimetype() {
-    return $this->mimetype;
-  }
-
-  /**
-   * Set the MIME type for the item.
-   *
-   * @param array $mimetype
-   *   The array of MIME type information for the item.
-   */
-  public function setMimetype($mimetype) {
-    $this->mimetype = $mimetype;
-  }
-
-  /**
-   * Get the size information for the item.
-   *
-   * @return array
-   *   The array of size information for the item.
-   */
-  public function getSize() {
-    return $this->size;
-  }
-
-  /**
-   * Set the size information for the item.
-   *
-   * @param array $size
-   *   The array of size information for the item.
-   */
-  public function setSize($size) {
-    $this->size = $size;
-  }
-
-  /**
-   * Get the timestamp information for the item.
-   *
-   * @return array
-   *   The array of size information for the item.
-   */
-  public function getTimestamp() {
-    return $this->timestamp;
-  }
-
-  /**
-   * Set the timestamp information for the item.
-   *
-   * @param array $timestamp
-   *   The array of size information for the item.
-   */
-  public function setTimestamp($timestamp) {
-    $this->timestamp = $timestamp;
   }
 
   /**

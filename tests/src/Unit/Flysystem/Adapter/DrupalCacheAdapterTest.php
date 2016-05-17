@@ -291,17 +291,32 @@ class DrupalCacheAdapterTest extends UnitTestCase {
   }
 
   /**
-   * Test setting visibility.
+   * Test getting setting visibility with no cache hits.
    *
    * @covers ::setVisibility
+   * @covers ::getVisibility
    */
-  public function testSetVisibility() {
+  public function testVisibilityMiss() {
     $this->cacheItemBackendLoadStubItem();
     $this->adapter->write('file', '', new Config());
     $metadata = $this->adapter->setVisibility('file', ['hidden']);
     $this->assertEquals($metadata, $this->adapter->getVisibility('file'));
 
     $this->assertFalse($this->adapter->setVisibility('does-not-exist', ['hidden']));
+  }
+
+  /**
+   * Test loading visibility from the cache.
+   *
+   * @covers ::getVisibility
+   */
+  public function testVisibility() {
+    $cache_item = $this->getCacheItemStub();
+    $cache_item->method('getVisibility')
+      ->willReturn(['visibility' => TRUE]);
+
+    $this->cacheItemBackendLoad($cache_item);
+    $this->assertEquals(['visibility' => TRUE], $this->adapter->getVisibility('file'));
   }
 
   /**
@@ -379,28 +394,29 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::getSize
    * @covers ::getTimestamp
    * @covers ::getVisibility
+   * @covers ::fetchMetadataKey
    */
   public function testGetMetadataMethods($method) {
-    $method = 'get' . ucfirst($method);
+    $get_method = 'get' . ucfirst($method);
     $cache_item = $this->getCacheItemStub();
-    $cache_item->method($method)
-      ->willReturn(['metadata']);
+    $cache_item->method('getMetadata')
+      ->willReturn([$method => 12345]);
     $this->cacheItemBackendLoad($cache_item);
 
     // Test that when we have a cache item that we don't call the child
     // adapter.
     $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->method('write')
-      ->willReturn(['metadata']);
+      ->willReturn([$method => 12345]);
     $mock_adapter->expects($this->never())
-      ->method($method);
+      ->method($get_method);
 
     // Populate the adapter with a file, but then bust the cache.
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
     $metadata = $adapter->write('test.txt', 'test', new Config());
 
     // Tests fetching from the cache.
-    $this->assertEquals($metadata, $adapter->$method('test.txt'), "Test cached $method on the child adapter");
+    $this->assertEquals($metadata, $adapter->$get_method('test.txt'), "Test cached $get_method on the child adapter");
   }
 
   /**
@@ -415,17 +431,17 @@ class DrupalCacheAdapterTest extends UnitTestCase {
    * @covers ::getSize
    * @covers ::getTimestamp
    * @covers ::getVisibility
+   * @covers ::fetchMetadataKey
    */
   public function testGetMetadataMethodsCacheMiss($method) {
     $get_method = 'get' . ucfirst($method);
-    $set_method = 'set' . ucfirst($method);
 
     $cache_item = $this->getCacheItemStub();
     $cache_item->expects($this->once())
-      ->method($set_method);
+      ->method('setMetadata');
     $cache_item->expects($this->once())
       ->method('save');
-    $cache_item->method($get_method)
+    $cache_item->method('getMetadata')
       ->willReturn(FALSE);
 
     $this->cacheItemBackendLoad($cache_item);
@@ -434,14 +450,14 @@ class DrupalCacheAdapterTest extends UnitTestCase {
     // adapter.
     $mock_adapter = $this->getFlysystemAdapterStub();
     $mock_adapter->method($get_method)
-      ->willReturn(['metadata']);
+      ->willReturn([$method => 12345]);
     $mock_adapter->expects($this->once())
       ->method($get_method);
 
     $adapter = new DrupalCacheAdapter('memory', $mock_adapter, $this->cacheItemBackend);
 
     // Tests fetching from the child adapter.
-    $this->assertEquals(['metadata'], $adapter->$get_method('test.txt'), "Test calling $get_method on the child adapter");
+    $this->assertEquals([$method => 12345], $adapter->$get_method('test.txt'), "Test calling $get_method on the child adapter");
   }
 
   /**
@@ -455,7 +471,7 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       'path' => 'test.txt',
     ];
     $cache_item = $this->getCacheItemStub();
-    $cache_item->method('getMimetype')
+    $cache_item->method('getMetadata')
       ->willReturn($mimetype);
     $this->cacheItemBackendLoad($cache_item);
     // Test that when we have a cache item that we don't call the child
@@ -506,7 +522,6 @@ class DrupalCacheAdapterTest extends UnitTestCase {
       ['metadata'],
       ['size'],
       ['timestamp'],
-      ['visibility'],
     ];
   }
 

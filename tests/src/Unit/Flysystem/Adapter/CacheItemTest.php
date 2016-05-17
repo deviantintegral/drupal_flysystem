@@ -30,18 +30,12 @@ class CacheItemTest extends UnitTestCase {
    *
    * @covers ::__construct
    * @covers ::getMetadata
-   * @covers ::getMimetype
    * @covers ::getPath
-   * @covers ::getSize
-   * @covers ::getTimestamp
    * @covers ::getType
    * @covers ::getVisibility
    * @covers ::getCacheItemBackend
    * @covers ::setMetadata
-   * @covers ::setMimetype
    * @covers ::setPath
-   * @covers ::setSize
-   * @covers ::setTimestamp
    * @covers ::setType
    * @covers ::setVisibility
    * @covers ::setCacheItemBackend
@@ -129,10 +123,7 @@ class CacheItemTest extends UnitTestCase {
   public function getSetMethodsProvider() {
     return [
       ['metadata', ['metadata']],
-      ['mimetype', ['mimetype']],
       ['path', 'path'],
-      ['size', ['size']],
-      ['timestamp', ['timestamp']],
       ['type', 'type'],
       ['visibility', ['visibility']],
       ['cacheItemBackend', $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItemBackend')->disableOriginalConstructor()->getMock(),

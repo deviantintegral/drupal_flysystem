@@ -258,54 +258,21 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getSize($path) {
-    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
-      if ($size = $item->getSize()) {
-        return $size;
-      }
-    }
-
-    $size = $this->adapter->getSize($path);
-    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
-    $item->setSize($size);
-    $item->save();
-
-    return $size;
+    return $this->fetchMetadataKey($path, 'size');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getMimetype($path) {
-    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
-      if ($mimetype = $item->getMimetype()) {
-        return $mimetype;
-      }
-    }
-
-    $mimetype = $this->adapter->getMimetype($path);
-    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
-    $item->setMimetype($mimetype);
-    $item->save();
-
-    return $mimetype;
+    return $this->fetchMetadataKey($path, 'mimetype');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getTimestamp($path) {
-    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
-      if ($timestamp = $item->getTimestamp()) {
-        return $timestamp;
-      }
-    }
-
-    $timestamp = $this->adapter->getTimestamp($path);
-    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
-    $item->setTimestamp($timestamp);
-    $item->save();
-
-    return $timestamp;
+    return $this->fetchMetadataKey($path, 'timestamp');
   }
 
   /**
@@ -334,6 +301,35 @@ class DrupalCacheAdapter implements AdapterInterface {
    */
   private function getScheme() {
     return $this->scheme;
+  }
+
+  /**
+   * Fetch a specific key from metadata.
+   *
+   * @param string $path
+   *   The path to load metadata for.
+   * @param string $key
+   *   The key in metadata, such as 'mimetype', to load metadata for.
+   *
+   * @return array
+   *   The array of metadata.
+   */
+  protected function fetchMetadataKey($path, $key) {
+    if ($item = $this->cacheItemBackend->load($this->getScheme(), $path)) {
+      if (($metadata = $item->getMetadata()) && isset($metadata[$key])) {
+        return $metadata;
+      }
+    }
+
+    $method = 'get' . ucfirst($key);
+    $metadata = $this->adapter->$method($path);
+
+    // Merge any new metadata into the existing metadata.
+    $item = $this->cacheItemBackend->load($this->getScheme(), $path);
+    $item->setMetadata($metadata);
+    $item->save();
+
+    return $metadata;
   }
 
 }
