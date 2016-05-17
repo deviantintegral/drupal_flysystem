@@ -2,6 +2,7 @@
 
 namespace Drupal\flysystem\Flysystem\Adapter;
 
+use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Cache\CacheBackendInterface;
 
 /**
@@ -117,7 +118,7 @@ class CacheItemBackend {
    */
   public function getCacheKey($scheme, $path) {
     $key = "$scheme://$path";
-    return md5($key);
+    return Crypt::hashBase64($key);
   }
 
 }

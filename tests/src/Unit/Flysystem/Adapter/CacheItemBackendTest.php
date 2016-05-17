@@ -2,6 +2,7 @@
 
 namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
+use Drupal\Component\Utility\Crypt;
 use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 use Drupal\Tests\UnitTestCase;
 
@@ -161,7 +162,7 @@ class CacheItemBackendTest extends UnitTestCase {
    * @covers ::getCacheKey
    */
   public function testGetCacheKey() {
-    $this->assertEquals(md5("testing://test.txt"), $this->cacheItemBackend->getCacheKey('testing', 'test.txt'));
+    $this->assertEquals(Crypt::hashBase64("testing://test.txt"), $this->cacheItemBackend->getCacheKey('testing', 'test.txt'));
   }
 
   /**
