@@ -192,7 +192,8 @@ class FlysystemFactory {
     }
 
     if ($settings['cache']) {
-      $adapter = new DrupalCacheAdapter($scheme, $adapter, new CacheItemBackend($this->cacheBackend));
+      $cache_item_backend = new CacheItemBackend($scheme, $this->cacheBackend);
+      $adapter = new DrupalCacheAdapter($scheme, $adapter, $cache_item_backend);
     }
 
     return $adapter;

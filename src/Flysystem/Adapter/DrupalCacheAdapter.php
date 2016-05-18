@@ -7,20 +7,11 @@ use League\Flysystem\Config;
 
 /**
  * A Flysystem adapter implementing caching with Drupal's Cache API.
- *
- * @class DrupalCacheAdapter
  */
 class DrupalCacheAdapter implements AdapterInterface {
 
   /**
-   * The scheme of the stream wrapper used for this adapter.
-   *
-   * @var string
-   */
-  protected $scheme;
-
-  /**
-   * The flysystem adapter to cache data for.
+   * The Flysystem adapter to cache data for.
    *
    * @var \League\Flysystem\AdapterInterface
    */
@@ -34,7 +25,14 @@ class DrupalCacheAdapter implements AdapterInterface {
   protected $cacheItemBackend;
 
   /**
-   * Construct a new caching Flysystem adapter.
+   * The scheme of the stream wrapper used for this adapter.
+   *
+   * @var string
+   */
+  protected $scheme;
+
+  /**
+   * Constructs a new caching Flysystem adapter.
    *
    * @param string $scheme
    *   The scheme of the stream wrapper used for this adapter.
@@ -55,13 +53,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   public function write($path, $contents, Config $config) {
     $metadata = $this->adapter->write($path, $contents, $config);
 
-    if ($metadata) {
-      $item = $this->cacheItemBackend->load($this->scheme, $path);
-      $item->setMetadata($metadata);
-      $item->save();
-    }
-
-    return $metadata;
+    return $this->updateMetadata($path, $metadata);
   }
 
   /**
@@ -70,13 +62,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   public function writeStream($path, $resource, Config $config) {
     $metadata = $this->adapter->writeStream($path, $resource, $config);
 
-    if ($metadata) {
-      $item = $this->cacheItemBackend->load($this->scheme, $path);
-      $item->setMetadata($metadata);
-      $item->save();
-    }
-
-    return $metadata;
+    return $this->updateMetadata($path, $metadata);
   }
 
   /**
@@ -85,13 +71,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   public function update($path, $contents, Config $config) {
     $metadata = $this->adapter->update($path, $contents, $config);
 
-    if ($metadata) {
-      $item = $this->cacheItemBackend->load($this->scheme, $path);
-      $item->setMetadata($metadata);
-      $item->save();
-    }
-
-    return $metadata;
+    return $this->updateMetadata($path, $metadata);
   }
 
   /**
@@ -100,13 +80,7 @@ class DrupalCacheAdapter implements AdapterInterface {
   public function updateStream($path, $resource, Config $config) {
     $metadata = $this->adapter->updateStream($path, $resource, $config);
 
-    if ($metadata) {
-      $item = $this->cacheItemBackend->load($this->scheme, $path);
-      $item->setMetadata($metadata);
-      $item->save();
-    }
-
-    return $metadata;
+    return $this->updateMetadata($path, $metadata);
   }
 
   /**
@@ -116,13 +90,10 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->rename($path, $newpath);
 
     if ($result) {
-      $item = $this->cacheItemBackend->load($this->scheme, $newpath);
-      $item->setPath($newpath);
-      $metadata = $item->getMetadata();
-      $metadata['path'] = $newpath;
-      $item->setMetadata($metadata);
-      $item->save();
-      $item->delete();
+      $item = $this->cacheItemBackend->load($path);
+      $newitem = clone $item;
+      $this->cacheItemBackend->set($newpath, $newitem);
+      $this->cacheItemBackend->delete($path);
     }
 
     return $result;
@@ -135,8 +106,9 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->copy($path, $newpath);
 
     if ($result) {
-      $this->cacheItemBackend->deleteByKey($this->scheme, $newpath);
-      $this->getMetadata($newpath);
+      $item = $this->cacheItemBackend->load($path);
+      $newitem = clone $item;
+      $this->cacheItemBackend->set($newpath, $newitem);
     }
 
     return $result;
@@ -149,7 +121,7 @@ class DrupalCacheAdapter implements AdapterInterface {
     $result = $this->adapter->delete($path);
 
     if ($result) {
-      $this->cacheItemBackend->deleteByKey($this->scheme, $path);
+      $this->cacheItemBackend->delete($path);
     }
 
     return $result;
@@ -166,7 +138,7 @@ class DrupalCacheAdapter implements AdapterInterface {
 
     if ($result) {
       $paths = array_column($contents, 'path');
-      $this->cacheItemBackend->deleteMultiple($this->scheme, $paths);
+      $this->cacheItemBackend->deleteMultiple($paths);
     }
 
     return $result;
@@ -176,36 +148,32 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function createDir($dirname, Config $config) {
-    $result = $this->adapter->createDir($dirname, $config);
+    $metadata = $this->adapter->createDir($dirname, $config);
 
     // Warm the metadata cache.
-    if ($result) {
-      $this->getMetadata($dirname);
+    if ($metadata) {
+      $item = new CacheItem();
+      $item->updateMetadata($metadata);
+      $this->cacheItemBackend->set($dirname, $item);
     }
 
-    return $result;
+    return $metadata;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setVisibility($path, $visibility) {
-    $result = $this->adapter->setVisibility($path, $visibility);
+    $metadata = $this->adapter->setVisibility($path, $visibility);
 
-    if ($result) {
-      $item = $this->cacheItemBackend->load($this->scheme, $path);
-      $item->setVisibility($visibility);
-      $item->save();
-    }
-
-    return $result;
+    return $this->updateMetadata($path, $metadata);
   }
 
   /**
    * {@inheritdoc}
    */
   public function has($path) {
-    if ($this->cacheItemBackend->load($this->scheme, $path)) {
+    if ($this->cacheItemBackend->has($path)) {
       return TRUE;
     }
 
@@ -242,14 +210,15 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getMetadata($path) {
-    $item = $this->cacheItemBackend->load($this->scheme, $path);
+    $item = $this->cacheItemBackend->load($path);
+
     if ($metadata = $item->getMetadata()) {
       return $metadata;
     }
 
     $metadata = $this->adapter->getMetadata($path);
-    $item->setMetadata($metadata);
-    $item->save();
+    $item->updateMetadata($metadata);
+    $this->cacheItemBackend->set($path, $item);
 
     return $metadata;
   }
@@ -279,22 +248,11 @@ class DrupalCacheAdapter implements AdapterInterface {
    * {@inheritdoc}
    */
   public function getVisibility($path) {
-    if ($item = $this->cacheItemBackend->load($this->scheme, $path)) {
-      if ($visibility = $item->getVisibility()) {
-        return $visibility;
-      }
-    }
-
-    $visibility = $this->adapter->getVisibility($path);
-    $item = $this->cacheItemBackend->load($this->scheme, $path);
-    $item->setVisibility($visibility);
-    $item->save();
-
-    return $visibility;
+    return $this->fetchMetadataKey($path, 'visibility');
   }
 
   /**
-   * Fetch a specific key from metadata.
+   * Fetches a specific key from metadata.
    *
    * @param string $path
    *   The path to load metadata for.
@@ -305,19 +263,31 @@ class DrupalCacheAdapter implements AdapterInterface {
    *   The array of metadata.
    */
   protected function fetchMetadataKey($path, $key) {
-    if ($item = $this->cacheItemBackend->load($this->scheme, $path)) {
-      if (($metadata = $item->getMetadata()) && isset($metadata[$key])) {
-        return $metadata;
-      }
+    $item = $this->cacheItemBackend->load($path);
+
+    if (($metadata = $item->getMetadata()) && isset($metadata[$key])) {
+      return $metadata;
     }
 
     $method = 'get' . ucfirst($key);
-    $metadata = $this->adapter->$method($path);
 
-    // Merge any new metadata into the existing metadata.
-    $item = $this->cacheItemBackend->load($this->scheme, $path);
-    $item->setMetadata($metadata);
-    $item->save();
+    return $this->updateMetadata($path, $this->adapter->$method($path));
+  }
+
+  /**
+   * Updates the metadata for a given path.
+   *
+   * @param string $path
+   *   The path of file file or directory.
+   * @param array|false $metadata
+   *   The metadata to update.
+   */
+  protected function updateMetadata($path, $metadata) {
+    if (!empty($metadata)) {
+      $item = $this->cacheItemBackend->load($path);
+      $item->updateMetadata($metadata);
+      $this->cacheItemBackend->set($path, $item);
+    }
 
     return $metadata;
   }

@@ -22,103 +22,106 @@ class CacheItemBackend {
   protected $cacheBackend;
 
   /**
-   * Construct a new CacheItemBackend.
+   * The scheme this cache is managing.
+   *
+   * @var string
+   */
+  protected $scheme;
+
+  /**
+   * Constructs a new CacheItemBackend.
    *
    * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
    *   The Drupal cache backend to store items in.
    */
-  public function __construct(CacheBackendInterface $cacheBackend) {
+  public function __construct($scheme, CacheBackendInterface $cacheBackend) {
+    $this->scheme = $scheme;
     $this->cacheBackend = $cacheBackend;
   }
 
   /**
-   * Load a cache item for a given scheme and path.
+   * Returns whether the cache item exists.
    *
-   * @param string $scheme
-   *   The scheme of the item to load.
+   * @param string $path
+   *   The path of the cache item.
+   *
+   * @return bool
+   *   True if the item exists, false if not.
+   */
+  public function has($path) {
+    return (bool) $this->cacheBackend->get($this->getCacheKey($path));
+  }
+
+  /**
+   * Loads a cache item for a given path.
+   *
    * @param string $path
    *   The path of the item to load.
    *
    * @return \Drupal\flysystem\Flysystem\Adapter\CacheItem
    *   The cache item, or a new cache item if one isn't in the cache.
    */
-  public function load($scheme, $path) {
-    $key = $this->getCacheKey($scheme, $path);
+  public function load($path) {
+    $key = $this->getCacheKey($path);
+
     if ($cached = $this->cacheBackend->get($key)) {
       /** @var \Drupal\flysystem\Flysystem\Adapter\CacheItem $item */
       $item = $cached->data;
-      $item->setCacheItemBackend($this);
     }
     else {
-      $item = new CacheItem($scheme, $path, $this);
+      $item = new CacheItem();
     }
 
     return $item;
   }
 
   /**
-   * Set a cache item in the backend.
+   * Sets a cache item in the backend.
    *
+   * @param string $path
+   *   The file path.
    * @param \Drupal\flysystem\Flysystem\Adapter\CacheItem $item
    *   The item to set.
    */
-  public function set(CacheItem $item) {
-    $key = $this->getCacheKey($item->getScheme(), $item->getPath());
-    $this->cacheBackend->set($key, $item);
+  public function set($path, CacheItem $item) {
+    $this->cacheBackend->set($this->getCacheKey($path), $item);
   }
 
   /**
-   * Delete a cache item from the backend.
+   * Deletes an item by the path.
    *
-   * @param \Drupal\flysystem\Flysystem\Adapter\CacheItem $item
-   *   The cache item to delete.
-   */
-  public function delete(CacheItem $item) {
-    $this->deleteByKey($item->getScheme(), $item->getPath());
-  }
-
-  /**
-   * Delete an item by a key, saving having to load an item to delete it.
-   *
-   * @param string $scheme
-   *   The scheme of the item to delete.
    * @param string $path
    *   The path of the item to delete.
    */
-  public function deleteByKey($scheme, $path) {
-    $this->deleteMultiple($scheme, [$path]);
+  public function delete($path) {
+    $this->deleteMultiple([$path]);
   }
 
   /**
-   * Delete multiple paths for a scheme from the cache.
+   * Deletes multiple paths.
    *
-   * @param string $scheme
-   *   The scheme of the items to delete.
    * @param array $paths
    *   The array of paths to delete.
    */
-  public function deleteMultiple($scheme, array $paths) {
-    $keys = array();
+  public function deleteMultiple(array $paths) {
+    $keys = [];
     foreach ($paths as $path) {
-      $keys[] = $this->getCacheKey($scheme, $path);
+      $keys[] = $this->getCacheKey($path);
     }
     $this->cacheBackend->deleteMultiple($keys);
   }
 
   /**
-   * Get the cache key for a cache item.
+   * Gets the cache key for a cache item.
    *
-   * @param string $scheme
-   *   The scheme of the cache item.
    * @param string $path
    *   The path of the cache item.
    *
    * @return string
    *   A hashed key suitable for use in a cache.
    */
-  public function getCacheKey($scheme, $path) {
-    $key = "$scheme://$path";
-    return Crypt::hashBase64($key);
+  protected function getCacheKey($path) {
+    return Crypt::hashBase64($this->scheme . '://' . $path);
   }
 
 }

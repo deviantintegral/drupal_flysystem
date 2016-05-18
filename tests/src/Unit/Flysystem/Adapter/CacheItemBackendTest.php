@@ -1,28 +1,24 @@
 <?php
 
-namespace NoDrupal\Tests\flysystem\Unit\Flysystem\Adapter;
+namespace Drupal\Tests\flysystem\Unit\Flysystem\Adapter;
 
-use Drupal\Component\Utility\Crypt;
-use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
+use Drupal\Core\Cache\MemoryBackend;
 use Drupal\Tests\UnitTestCase;
+use Drupal\flysystem\Flysystem\Adapter\CacheItem;
+use Drupal\flysystem\Flysystem\Adapter\CacheItemBackend;
 
 /**
- * Tests CacheItemBackend.
- *
- * @class CacheItemBackendTest
- *
  * @group flysystem
  *
  * @coversDefaultClass \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
- *
- * @covers ::__construct
+ * @covers \Drupal\flysystem\Flysystem\Adapter\CacheItemBackend
  */
 class CacheItemBackendTest extends UnitTestCase {
 
   /**
-   * A cache backend implementing \Drupal\Core\Cache\CacheBackendInterface.
+   * The cache backend used in the CacheItemBackend.
    *
-   * @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\Core\Cache\CacheBackendInterface
+   * @var \Drupal\Core\Cache\CacheBackendInterface
    */
   protected $cacheBackend;
 
@@ -34,158 +30,68 @@ class CacheItemBackendTest extends UnitTestCase {
   protected $cacheItemBackend;
 
   /**
-   * Sets up the cache item backend with a mock cache backend.
+   * {@inheritdoc}
    */
   public function setup() {
-    $this->cacheBackend = $this->getMock('\Drupal\Core\Cache\CacheBackendInterface');
-    $this->cacheItemBackend = new CacheItemBackend($this->cacheBackend);
+    $this->cacheBackend = new MemoryBackend('foo');
+    $this->cacheItemBackend = new CacheItemBackend('test-scheme', $this->cacheBackend);
   }
 
   /**
-   * Test loading a cache item from the cache.
-   *
-   * @covers ::load
+   * Tests whether a cache item exists.
    */
-  public function testLoad() {
-    $cache_item = $this->getCacheItemStub();
-    $cache_item->expects($this->once())
-      ->method('setCacheItemBackend');
-
-    $cached = new \stdClass();
-    $cached->data = $cache_item;
-
-    $this->cacheBackend->expects($this->once())
-      ->method('get')
-      ->willReturn($cached);
-
-    $item = $this->cacheItemBackend->load('test-scheme', 'test');
-    $this->assertInstanceOf('\Drupal\flysystem\Flysystem\Adapter\CacheItem', $item);
+  public function testHas() {
+    $this->assertFalse($this->cacheItemBackend->has('test.txt'));
   }
 
   /**
-   * Test when loading a cache item creates a new item.
-   *
-   * @covers ::load
+   * Tests loading a cache item from the cache.
+   */
+  public function testSetIsLoaded() {
+    $cache_item = new CacheItem();
+    $cache_item->updateMetadata(['mimetype' => 'test_mimetype']);
+    $this->cacheItemBackend->set('test_path', $cache_item);
+
+    $metadata = $this->cacheItemBackend->load('test_path')->getMetadata();
+    $this->assertSame('test_mimetype', $metadata['mimetype']);
+  }
+
+  /**
+   * Tests when loading a cache item creates a new item.
    */
   public function testLoadMiss() {
-    $cache_item = $this->getCacheItemStub();
-    $cache_item->expects($this->never())
-      ->method('setCacheItemBackend');
-
-    $item = $this->cacheItemBackend->load('test-scheme', 'test');
-    $this->assertInstanceOf('\Drupal\flysystem\Flysystem\Adapter\CacheItem', $item);
+    $item = $this->cacheItemBackend->load('test_path');
+    $this->assertInstanceOf(CacheItem::class, $item);
   }
 
   /**
-   * Tests the set() method.
-   *
-   * @covers ::set
-   */
-  public function testSet() {
-    $cache_item = $this->getCacheItemStub();
-    $this->cacheBackend->expects($this->once())
-      ->method('set')
-      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
-
-    $this->cacheItemBackend->set($cache_item);
-  }
-
-  /**
-   * Tests the delete() method.
-   *
-   * @covers ::delete
+   * Tests deleting by a path.
    */
   public function testDelete() {
-    $cache_item = $this->getCacheItemStub();
-    $cache_item->expects($this->never())
-      ->method('setCacheItemBackend');
+    $cache_item = new CacheItem();
+    $cache_item->updateMetadata(['mimetype' => 'test_mimetype']);
 
-    $this->cacheBackend->expects($this->once())
-      ->method('set')
-      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
+    $this->cacheItemBackend->set('test_path', $cache_item);
+    $this->cacheItemBackend->delete('test_path');
 
-    $this->cacheItemBackend->set($cache_item);
-    $this->cacheItemBackend->delete($cache_item);
-    $this->cacheItemBackend->load('test', 'test');
+    $metadata = $this->cacheItemBackend->load('test_path')->getMetadata();
+    $this->assertTrue(empty($metadata['mimetype']));
   }
 
   /**
-   * Tests deleting by a key.
-   *
-   * @covers ::deleteByKey
-   */
-  public function testDeleteByKey() {
-    $cache_item = $this->getCacheItemStub();
-    $cache_item->expects($this->never())
-      ->method('setCacheItemBackend');
-
-    $this->cacheBackend->expects($this->once())
-      ->method('set')
-      ->with($this->cacheItemBackend->getCacheKey('test', 'test'), $cache_item);
-
-    $this->cacheItemBackend->set($cache_item);
-    $this->cacheItemBackend->deleteByKey('test', 'test');
-    $this->cacheItemBackend->load('test', 'test');
-  }
-
-  /**
-   * Test deleting multiple items at once.
-   *
-   * @covers ::deleteMultiple
+   * Tests deleting multiple items at once.
    */
   public function testDeleteMultiple() {
-    $cache_item_one = $this->getCacheItemStub('test', 'one');
-    $cache_item_one->expects($this->never())
-      ->method('setCacheItemBackend');
+    $cache_item_one = new CacheItem();
+    $cache_item_two = new CacheItem();
 
-    $cache_item_two = $this->getCacheItemStub('test', 'two');
-    $cache_item_two->expects($this->never())
-      ->method('setCacheItemBackend');
+    $this->cacheItemBackend->set('one', $cache_item_one);
+    $this->cacheItemBackend->set('two', $cache_item_two);
 
-    $this->cacheBackend->expects($this->exactly(2))
-      ->method('set')
-      ->withConsecutive(
-        [$this->cacheItemBackend->getCacheKey('test', 'one'), $cache_item_one],
-        [$this->cacheItemBackend->getCacheKey('test', 'two'), $cache_item_two]
-      );
+    $this->cacheItemBackend->deleteMultiple(['one', 'two']);
 
-    $this->cacheItemBackend->set($cache_item_one);
-    $this->cacheItemBackend->set($cache_item_two);
-    $this->cacheItemBackend->deleteMultiple('test', ['one', 'two']);
-    $this->cacheItemBackend->load('test', 'one');
-    $this->cacheItemBackend->load('test', 'two');
-  }
-
-  /**
-   * Tests generation of a hashed cache key.
-   *
-   * @covers ::getCacheKey
-   */
-  public function testGetCacheKey() {
-    $this->assertEquals(Crypt::hashBase64("testing://test.txt"), $this->cacheItemBackend->getCacheKey('testing', 'test.txt'));
-  }
-
-  /**
-   * Helper to return a stub cache item.
-   *
-   * @param string $scheme
-   *   (optional) The scheme for the cache item.
-   * @param string $path
-   *   (optional) The path for the cache item.
-   *
-   * @return \PHPUnit_Framework_MockObject_MockObject
-   *   The stub cache item.
-   */
-  private function getCacheItemStub($scheme = 'test', $path = 'test') {
-    $cache_item = $this->getMockBuilder('\Drupal\flysystem\Flysystem\Adapter\CacheItem')
-      ->setConstructorArgs([$scheme, $path, $this->cacheItemBackend])
-      ->getMock();
-    $cache_item->method('getScheme')
-      ->willReturn($scheme);
-    $cache_item->method('getPath')
-      ->willReturn($path);
-
-    return $cache_item;
+    $this->assertNotSame($cache_item_one, $this->cacheItemBackend->load('one'));
+    $this->assertNotSame($cache_item_two, $this->cacheItemBackend->load('two'));
   }
 
 }
