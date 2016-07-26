@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\image\Controller\ImageStyleDownloadController.
- */
-
 namespace Drupal\flysystem\Controller;
 
 use Drupal\Component\Utility\Crypt;
@@ -294,4 +289,3 @@ class ImageStyleDownloadController extends FileDownloadController {
   }
 
 }
-

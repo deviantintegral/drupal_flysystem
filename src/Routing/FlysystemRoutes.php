@@ -70,9 +70,7 @@ class FlysystemRoutes implements ContainerInjectionInterface {
    *   An array of route objects.
    */
   public function routes() {
-    /** @var \Drupal\Core\StreamWrapper\PublicStream $public_wrapper */
-    $public_wrapper = $this->streamWrapperManager->getViaScheme('public');
-    $public_directory_path = $public_wrapper->getDirectoryPath();
+    $public_directory_path = $this->streamWrapperManager->getViaScheme('public')->getDirectoryPath();
     $routes = [];
 
     $all_settings = Settings::get('flysystem', []);
@@ -117,7 +115,7 @@ class FlysystemRoutes implements ContainerInjectionInterface {
       );
 
       if ($this->moduleHandler->moduleExists('image')) {
-        // Public image route that proxies the response through Drupal.
+        // Public image route for alternate public directories.
         $routes['flysystem.' . $scheme . '.style_public'] = new Route(
           '/' . $settings['config']['root'] . '/styles/{image_style}/' . $scheme,
           [
@@ -132,7 +130,7 @@ class FlysystemRoutes implements ContainerInjectionInterface {
     }
 
     if ($this->moduleHandler->moduleExists('image')) {
-      // Internal image rotue.
+      // Public image route that proxies the response through Drupal.
       $routes['flysystem.image_style'] = new Route(
         '/_flysystem/styles/{image_style}/{scheme}',
         [

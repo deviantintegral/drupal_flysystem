@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\flysystem\ImageStyleCopier.
- */
 
 namespace Drupal\flysystem;
 
@@ -75,16 +71,10 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    /** @var LockBackendInterface $lock */
-    $lock = $container->get('lock');
-    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
-    $file_system = $container->get('file_system');
-    /** @var \Psr\Log\LoggerInterface $logger */
-    $logger = $container->get('logger.channel.image');
     return new static(
-      $lock,
-      $file_system,
-      $logger
+      $container->get('lock'),
+      $container->get('file_system'),
+      $container->get('logger.channel.image')
     );
   }
 
@@ -92,13 +82,13 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events = array();
+    $events = [];
     $events[KernelEvents::TERMINATE] = 'processCopyTasks';
     return $events;
   }
 
   /**
-   * Add a task to generate and copy an image derivative.
+   * Adds a task to generate and copy an image derivative.
    *
    * @param string $temporary_uri
    *   The URI of the temporary image to copy from.
@@ -112,7 +102,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
   }
 
   /**
-   * Process all image copy tasks.
+   * Processes all image copy tasks.
    */
   public function processCopyTasks() {
     foreach ($this->copyTasks as $task) {
@@ -120,7 +110,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
       $this->copyToAdapter($temporary_uri, $source_uri, $image_style);
     }
 
-    $this->copyTasks = array();
+    $this->copyTasks = [];
   }
 
   /**
@@ -132,9 +122,6 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    *   The URI of the source image.
    * @param \Drupal\image\ImageStyleInterface $image_style
    *   The image style to generate.
-   *
-   * @return string Thrown if the image could not be copied.
-   *   Thrown if the image could not be copied.
    */
   protected function copyToAdapter($temporary_uri, $source_uri, ImageStyleInterface $image_style) {
     $derivative_uri = $image_style->buildUri($source_uri);
@@ -144,26 +131,30 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
     // this lock, we know another thread is uploading the image and we ignore
     // uploading it in this thread.
     $lock_name = 'flysystem_copy_to_adapter:' . $image_style->id() . ':' . Crypt::hashBase64($source_uri);
+
     if (!$this->lock->acquire($lock_name)) {
       throw new UploadException('Another copy of %image to %destination is in progress', $temporary_uri, $derivative_uri);
     }
 
-    // Get the folder for the final location of this style.
-    $directory = $this->fileSystem->dirname($derivative_uri);
+    try {
+      // Get the folder for the final location of this style.
+      $directory = $this->fileSystem->dirname($derivative_uri);
 
-    // Build the destination folder tree if it doesn't already exist.
-    if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
-      $this->logger->error('Failed to create style directory: %directory', array('%directory' => $directory));
-      return FALSE;
+      // Build the destination folder tree if it doesn't already exist.
+      if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+        $this->logger->error('Failed to create image style directory: %directory', ['%directory' => $directory]);
+        return;
+      }
+
+      if (!file_unmanaged_copy($temporary_uri, $derivative_uri, FILE_EXISTS_REPLACE)) {
+        $this->logger->error('Unable to copy %image to %destination', ['%image' => $temporary_uri, '%directory' => $directory]);
+        return;
+      }
+
     }
-    if (!$path = file_unmanaged_copy($temporary_uri, $derivative_uri, FILE_EXISTS_REPLACE)) {
+    finally {
       $this->lock->release($lock_name);
-      throw new UploadException(sprintf('Unable to copy %image to %destination', $temporary_uri, $derivative_uri));
     }
-
-    $this->lock->release($lock_name);
-
-    return $path;
   }
 
 }

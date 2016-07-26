@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flysystem\PathProcessor\FlysystemImageStyleRedirectProcessor.
- */
-
 namespace Drupal\flysystem\PathProcessor;
 
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
@@ -34,8 +29,8 @@ class FlysystemImageStyleRedirectProcessor implements InboundPathProcessorInterf
 
     // Stream wrapper protocols must conform to /^[a-zA-Z0-9+.-]+$/
     // Via php_stream_wrapper_scheme_validate() in the PHP source.
-    $matches = array();
-    if (!preg_match('|^' . $this::STYLES_PATH . '/([^/]+)/([a-zA-Z0-9+.-]+)/|', $path, $matches)) {
+    $matches = [];
+    if (!preg_match('|^' . static::STYLES_PATH . '/([^/]+)/([a-zA-Z0-9+.-]+)/|', $path, $matches)) {
       return $path;
     }
 
@@ -46,7 +41,7 @@ class FlysystemImageStyleRedirectProcessor implements InboundPathProcessorInterf
     // Set the file as query parameter.
     $request->query->set('file', $file);
 
-    return $this::STYLES_PATH . '/' . $image_style . '/' . $scheme;
+    return static::STYLES_PATH . '/' . $image_style . '/' . $scheme;
   }
 
 }

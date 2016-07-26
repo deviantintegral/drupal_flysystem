@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains Drupal\flysystem\Controller\ImageStyleRedirectController.
- */
 
 namespace Drupal\flysystem\Controller;
 
@@ -73,21 +69,12 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    /** @var LockBackendInterface $lock */
-    $lock = $container->get('lock');
-    /** @var ImageFactory $image_factory */
-    $image_factory = $container->get('image.factory');
-    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
-    $file_system = $container->get('file_system');
-
-    /** @var \Drupal\flysystem\ImageStyleCopier $image_style_copier */
-    $image_style_copier = $container->get('flysystem_image_style_copier');
     return new static(
-      $lock,
-      $image_factory,
+      $container->get('lock'),
+      $container->get('image.factory'),
       $container->get('entity.manager')->getStorage('file'),
-      $file_system,
-      $image_style_copier
+      $container->get('file_system'),
+      $container->get('flysystem_image_style_copier')
     );
   }
 
@@ -106,7 +93,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     }
     catch (FileNotFoundException $e) {
       $derivative_uri = $image_style->buildUri($source_uri);
-      $this->logger->notice('Source image at %source_image_path not found while trying to generate derivative image at %derivative_path.', array('%source_image_path' => $source_uri, '%derivative_path' => $derivative_uri));
+      $this->logger->notice('Source image at %source_image_path not found while trying to generate derivative image at %derivative_path.', ['%source_image_path' => $source_uri, '%derivative_path' => $derivative_uri]);
       return new Response($this->t('Error generating image, missing source file.'), 404);
     }
 
@@ -245,7 +232,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
       $temporary_image = $this->generateTemporaryImage($scheme, $source_path, $image_style);
     }
     catch (\RuntimeException $e) {
-      $this->logger->notice('Unable to generate the derived image located at %path.', array('%path' => $derivative_uri));
+      $this->logger->notice('Unable to generate the derived image located at %path.', ['%path' => $derivative_uri]);
       return new Response($this->t('Error generating image.'), 500);
     }
 
