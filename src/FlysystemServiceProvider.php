@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\flysystem\FlysystemServiceProvider.
- */
-
 namespace Drupal\flysystem;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
@@ -76,6 +71,12 @@ class FlysystemServiceProvider implements ServiceProviderInterface {
     $container
       ->getDefinition('asset.' . $extension . '.collection_optimizer')
       ->setClass('Drupal\flysystem\Asset\\' . ucfirst($extension) . 'CollectionOptimizer');
+
+    if ($extension === 'css') {
+      $container
+        ->getDefinition('asset.css.optimizer')
+        ->setClass('Drupal\flysystem\Asset\CssOptimizer');
+    }
   }
 
 }

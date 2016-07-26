@@ -8,39 +8,40 @@ Reducing technical debt and chance of vendor lock-in.
 ## REQUIREMENTS ##
 
 - Composer (https://getcomposer.org)
-- (optional) Composer manager (https://www.drupal.org/project/composer_manager)
-  If you have a different method of managing Composer dependencies, use that.
 
 ## INSTALLATION ##
 
 These are the steps you need to take in order to use this software. Order is
 important.
 
-Note: If you're not using composer_manager, then use whatever you normally use
-to manage dependencies, and just install this module.
-
- 1. Download composer_manager.
- 2. Download flysystem.
- 3. Initialize composer_manager:
- 4. Update composer dependencies.
- 5. Install Flysystem.
- 6. Enjoy.
-
-Steps performed from the root of the Drupal install. Module locations may vary.
+ 1. Download and install flysystem's module and its dependencies.
+ 2. Install flysystem module.
+ 3. Enjoy.
 
 ```bash
-drush dl composer_manager flysystem
-php modules/composer_manager/scripts/init.php
-composer drupal-rebuild
-composer update --lock
-drush en flysystem -y
+cd /path/to/drupal/root
+composer require drupal/flysystem
+drush en flysystem
 ```
+
+## TROUBLESHOOTING ##
+
+If you are having trouble with this module, check the status page at
+admin/reports/status. The status page runs all the Flysystem checks and provides
+useful error reporting.
 
 ## CONFIGURATION ##
 
-Stream wrappers are configured in settings.php. The keys (localexample) are the
-names of the stream wrappers. For example: 'localexample://filename.txt'
-The 'driver' key, is the type of adapter. Available adapters are:
+Stream wrappers are configured in settings.php.
+
+The keys (local-example below) are the names of the stream wrappers.
+
+For example: 'local-example://filename.txt'.
+
+Stream wrapper names cannot contain underscores, they can only contain letters,
+numbers, + (plus sign), . (period), - (hyphen).
+
+The 'driver' key, is the type of adapter. The available adapters are:
 
  - local
  - ftp (Requires the ftp extension)
@@ -56,7 +57,7 @@ Example configuration:
 
 ```php
 $schemes = [
-  'localexample' => [            // The name of the stream wrapper. localexample://
+  'local-example' => [           // The name of the stream wrapper.
 
     'driver' => 'local',         // The plugin key.
 
@@ -71,6 +72,9 @@ $schemes = [
                                                  // of the Drupal install.
 
     // Optional settings that apply to all adapters.
+
+    'name' => 'Custom stream wrapper name', // Defaults to Flysystem: scheme.
+    'description' => 'Custom description',  // Defaults to Flysystem: scheme.
 
     'cache' => TRUE,             // Cache filesystem metadata. Not necessary for
                                  // the local driver.
