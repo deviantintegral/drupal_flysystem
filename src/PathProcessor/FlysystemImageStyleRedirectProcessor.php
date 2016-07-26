@@ -16,14 +16,14 @@ class FlysystemImageStyleRedirectProcessor implements InboundPathProcessorInterf
   /**
    * The base menu path for style redirects.
    */
-  const STYLES_PATH = '/_flysystem-style-redirect/styles';
+  const STYLES_PATH = '/_flysystem-style-redirect';
 
   /**
    * {@inheritdoc}
    */
   public function processInbound($path, Request $request) {
     // Quick exit.
-    if (strpos($path, $this::STYLES_PATH) !== 0) {
+    if (strpos($path, static::STYLES_PATH) !== 0) {
       return $path;
     }
 

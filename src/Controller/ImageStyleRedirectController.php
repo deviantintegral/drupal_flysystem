@@ -45,7 +45,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
   protected $imageStyleCopier;
 
   /**
-   * Constructs a ImageStyleDownloadController object.
+   * Constructs an ImageStyleRedirectController.
    *
    * @param \Drupal\Core\Lock\LockBackendInterface $lock
    *   The lock backend.
@@ -126,19 +126,6 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     $image_uri = "$scheme://$source_path";
     $destination_temp = $image_style->buildUri("temporary://flysystem/$scheme/$source_path");
 
-    // Save the temporary image so cron will eventually clean it up.
-    $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
-    $temporary_image = reset($source_file);
-    // The temporary file entity could exist, but the file on disk could have
-    // been removed by a server reboot or a system administrator.
-    if (!$temporary_image) {
-      /** @var File $temporary_image */
-      $temporary_image = File::create([
-        'uid' => User::getAnonymousUser()->id(),
-        'uri' => $destination_temp,
-      ]);
-    }
-
     // Try to generate the temporary image, watching for other threads that may
     // also be trying to generate the temporary image.
     try {
@@ -146,19 +133,20 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
       if (!$success) {
         throw new \RuntimeException('The temporary image could not be generated');
       }
-      $temporary_image->save();
     }
     catch (ServiceUnavailableHttpException $e) {
       // This exception is only thrown if the lock could not be acquired.
       $tries = 0;
-      $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
-      while ($tries < 4 && (!file_exists($destination_temp) || !$temporary_image = reset($source_file))) {
-        // The file still doesn't exist or it exists but the other thread hasn't
-        // saved the entity yet.
+
+      do {
+        if (file_exists($destination_temp)) {
+          break;
+        }
+
+        // The file still doesn't exist.
         usleep(250000);
-        $source_file = $this->fileStorage->loadByProperties(['uri' => $destination_temp]);
         $tries++;
-      }
+      } while ($tries < 4);
 
       // We waited for more than 1 second for the temporary image to appear.
       // Since local image generation should be fast, fail out here to try to
@@ -168,11 +156,11 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
       }
     }
 
-    return $temporary_image;
+    return $destination_temp;
   }
 
   /**
-   * Flush the output buffer and copy the temporary image to the adapter.
+   * Flushes the output buffer and copies the temporary images to the adapter.
    */
   protected function flushCopy() {
     // We have to call both of these to actually flush the image.
@@ -182,7 +170,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
   }
 
   /**
-   * Redirect to to an adapter hosted image, if it exists.
+   * Redirects to to an adapter hosted image, if it exists.
    *
    * @param string $source_uri
    *   The URI to the source image.
@@ -197,15 +185,24 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
    */
   protected function redirectAdapterImage($source_uri, ImageStyleInterface $image_style) {
     $derivative_uri = $image_style->buildUri($source_uri);
+
     if (file_exists($derivative_uri)) {
       // We can't just return TrustedRedirectResponse because core throws an
       // exception about missing cache metadata.
       // https://www.drupal.org/node/2638686
       // https://www.drupal.org/node/2630808
       // http://drupal.stackexchange.com/questions/187086/trustedresponseredirect-failing-how-to-prevent-cache-metadata
-      $url = Url::fromUri($image_style->buildUrl($source_uri))->toString(TRUE);
-      $response = new TrustedRedirectResponse($url->getGeneratedUrl());
-      $response->addCacheableDependency($url);
+
+      // @todo Figure out why caching this response leads to stale images being
+      // served.
+
+      // $url = Url::fromUri($image_style->buildUrl($source_uri))->toString(TRUE);
+      // $response = new TrustedRedirectResponse($url->getGeneratedUrl());
+      // $response->addCacheableDependency($url);
+
+      $response = new TrustedRedirectResponse($image_style->buildUrl($source_uri));
+      $response->addCacheableDependency(0);
+
       return $response;
     }
 
@@ -213,7 +210,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
   }
 
   /**
-   * Deliver a generate an image, deliver it, and upload it to the adapter.
+   * Delivers a generate an image, deliver it, and upload it to the adapter.
    *
    * @param string $scheme
    *   The scheme of the source image.
@@ -229,7 +226,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     $source_uri = $scheme . '://' . $source_path;
     $derivative_uri = $image_style->buildUri($source_uri);
     try {
-      $temporary_image = $this->generateTemporaryImage($scheme, $source_path, $image_style);
+      $temporary_uri = $this->generateTemporaryImage($scheme, $source_path, $image_style);
     }
     catch (\RuntimeException $e) {
       $this->logger->notice('Unable to generate the derived image located at %path.', ['%path' => $derivative_uri]);
@@ -237,7 +234,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
     }
 
     // Register a copy task with the kernel terminate handler.
-    $this->imageStyleCopier->addCopyTask($temporary_image->getFileUri(), $source_uri, $image_style);
+    $this->imageStyleCopier->addCopyTask($temporary_uri, $source_uri, $image_style);
 
     // Symfony's kernel terminate handler is documented to only executes after
     // flushing with fastcgi, and not with mod_php or regular CGI. However,
@@ -252,7 +249,7 @@ class ImageStyleRedirectController extends ImageStyleDownloadController {
       });
     }
 
-    return $this->send($scheme, $temporary_image->getFileUri());
+    return $this->send($scheme, $temporary_uri);
   }
 
 }

@@ -10,7 +10,6 @@ use Drupal\image\ImageStyleInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\File\Exception\UploadException;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
@@ -18,8 +17,6 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * This class is registered to run on the kernel's terminate event so it doesn't
  * block image delivery.
- *
- * @class ImageStyleCopier
  */
 class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionInterface {
 
@@ -52,7 +49,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
   protected $copyTasks = [];
 
   /**
-   * Construct ImageStyleCopier.
+   * Constructs an ImageStyleCopier.
    *
    * @param \Drupal\Core\Lock\LockBackendInterface $lock
    *   The lock backend.
@@ -84,6 +81,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
   public static function getSubscribedEvents() {
     $events = [];
     $events[KernelEvents::TERMINATE] = 'processCopyTasks';
+
     return $events;
   }
 
@@ -93,7 +91,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
    * @param string $temporary_uri
    *   The URI of the temporary image to copy from.
    * @param string $source_uri
-   *   The final destination of the image derivative.
+   *   The URI of the source image.
    * @param \Drupal\image\ImageStyleInterface $image_style
    *   The image style being copied.
    */
@@ -114,7 +112,7 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
   }
 
   /**
-   * Generate an image with the remote stream wrapper.
+   * Generates an image with the remote stream wrapper.
    *
    * @param string $temporary_uri
    *   The temporary file URI to copy to the adapter.
@@ -133,7 +131,8 @@ class ImageStyleCopier implements EventSubscriberInterface, ContainerInjectionIn
     $lock_name = 'flysystem_copy_to_adapter:' . $image_style->id() . ':' . Crypt::hashBase64($source_uri);
 
     if (!$this->lock->acquire($lock_name)) {
-      throw new UploadException('Another copy of %image to %destination is in progress', $temporary_uri, $derivative_uri);
+      $this->logger->info('Another copy of %image to %destination is in progress', ['%image' => $temporary_uri, '%destination' => $derivative_uri]);
+      return;
     }
 
     try {

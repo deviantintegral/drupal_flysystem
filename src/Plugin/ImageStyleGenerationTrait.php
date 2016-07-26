@@ -81,7 +81,13 @@ trait ImageStyleGenerationTrait {
    */
   protected function generateImageUrl($target) {
     list(, $style, $scheme, $file) = explode('/', $target, 4);
-    return \Drupal::urlGenerator()->generate("flysystem.$scheme.style_redirect", ['image_style' => $style], UrlGeneratorInterface::ABSOLUTE_URL) . "/$file";
+    $args = [
+      'image_style' => $style,
+      'scheme' => $scheme,
+      'filepath' => $file,
+    ];
+
+    return \Drupal::urlGenerator()->generate('flysystem.image_stye_redirect.serve', $args, UrlGeneratorInterface::ABSOLUTE_URL);
   }
 
 }
