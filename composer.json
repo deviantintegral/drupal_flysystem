@@ -12,7 +12,7 @@
   },
 
   "replace": {
-    "drupal/flysystem": "dev-8.x-1.x"
+    "drupal/flysystem": "*"
   },
 
   "autoload": {
