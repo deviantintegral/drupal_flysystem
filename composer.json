@@ -12,7 +12,7 @@
   },
 
   "replace": {
-    "drupal/flysystem": "Replace the d.o module with our patched version"
+    "drupal/flysystem": "dev-8.x-1.x"
   },
 
   "autoload": {
