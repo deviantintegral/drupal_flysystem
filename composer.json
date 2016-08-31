@@ -12,7 +12,7 @@
   },
 
   "replace": {
-    "drupal/flysystem"
+    "drupal/flysystem": "Replace the d.o module with our patched version"
   },
 
   "autoload": {
