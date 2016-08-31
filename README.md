@@ -1,6 +1,10 @@
 Flysystem for Drupal
 ====================
 
+This is a fork of the Flysystem Drupal module, with various patches and their
+conflicts installed. Once all of these patches have been merged, this
+repository will be depreciated.
+
 [Flysystem](http://flysystem.thephpleague.com/) is a filesystem abstraction
 which allows you to easily swap out a local filesystem for a remote one.
 Reducing technical debt and chance of vendor lock-in.

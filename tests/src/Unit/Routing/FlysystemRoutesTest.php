@@ -168,7 +168,7 @@ class FlysystemRoutesTest extends UnitTestCase {
 
     $this->moduleHandler->moduleExists('image')->willReturn(TRUE);
     $routes = $this->router->routes();
-    $this->assertSame(3, count($routes));
+    $this->assertSame(5, count($routes));
     $this->assertSame($expected->serialize(), $routes['flysystem.image_style']->serialize());
   }
 

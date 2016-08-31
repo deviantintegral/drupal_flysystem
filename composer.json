@@ -1,5 +1,5 @@
 {
-  "name": "drupal/flysystem",
+  "name": "deviantintegral/flysystem",
   "type": "drupal-module",
   "require": {
     "league/flysystem": "^1.0.3",
@@ -9,6 +9,10 @@
 
   "require-dev": {
     "league/flysystem-memory": "~1.0"
+  },
+
+  "replace": {
+    "drupal/flysystem": "dev-8.x-1.x"
   },
 
   "autoload": {
