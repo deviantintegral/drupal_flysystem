@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \NoDrupal\Tests\flysystem\Unit\FlysystemBridgeTest.
- */
-
 namespace NoDrupal\Tests\flysystem\Unit;
 
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
@@ -47,6 +42,8 @@ class FlysystemBridgeTest extends UnitTestCase {
     $this->filesystem = new Filesystem(new MissingAdapter());
 
     $factory->getFilesystem('testscheme')->willReturn($this->filesystem);
+
+    $factory->getSettings('testscheme')->willReturn(['name' => '', 'description' => '']);
 
     $container = new ContainerBuilder();
     $container->set('flysystem_factory', $factory->reveal());

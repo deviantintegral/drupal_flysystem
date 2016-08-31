@@ -1,13 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\flysystem\Unit\FlysystemServiceProviderTest.
- */
-
 namespace Drupal\Tests\flysystem\Unit;
 
 use Drupal\Core\Asset\AssetDumper;
+use Drupal\Core\Asset\CssCollectionOptimizer;
+use Drupal\Core\Asset\CssOptimizer;
 use Drupal\Core\Asset\JsCollectionOptimizer;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Site\Settings;
@@ -15,6 +12,8 @@ use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\flysystem\StreamWrapper\PublicGuardStream;
 use Drupal\Tests\UnitTestCase;
 use Drupal\flysystem\Asset\AssetDumper as FlysystemAssetDumper;
+use Drupal\flysystem\Asset\CssCollectionOptimizer as FlysystemCssCollectionOptimizer;
+use Drupal\flysystem\Asset\CssOptimizer as FlysystemCssOptimizer;
 use Drupal\flysystem\Asset\JsCollectionOptimizer as FlysystemJsCollectionOptimizer;
 use Drupal\flysystem\FlysystemBridge;
 use Drupal\flysystem\FlysystemServiceProvider;
@@ -105,6 +104,24 @@ class FlysystemServiceProviderTest extends UnitTestCase {
     $this->assertSame(FlysystemAssetDumper::class, $this->container->getDefinition('asset.js.dumper')->getClass());
     $this->assertSame(FlysystemJsCollectionOptimizer::class, $this->container->getDefinition('asset.js.collection_optimizer')->getClass());
     $this->assertSame(PublicGuardStream::class, $this->container->getDefinition('stream_wrapper.public')->getClass());
+  }
+
+  /**
+   * @covers \Drupal\flysystem\FlysystemServiceProvider
+   */
+  public function testSwappingCssServices() {
+    // Test swapping the asset dumper.
+    $this->container->register('asset.css.dumper', AssetDumper::class);
+    $this->container->register('asset.css.collection_optimizer', CssCollectionOptimizer::class);
+    $this->container->register('asset.css.optimizer', CssOptimizer::class);
+
+    new Settings(['flysystem' => ['testscheme' => ['driver' => 'whatever', 'serve_css' => TRUE]]]);
+
+    (new FlysystemServiceProvider())->register($this->container);
+
+    $this->assertSame(FlysystemAssetDumper::class, $this->container->getDefinition('asset.css.dumper')->getClass());
+    $this->assertSame(FlysystemCssCollectionOptimizer::class, $this->container->getDefinition('asset.css.collection_optimizer')->getClass());
+    $this->assertSame(FlysystemCssOptimizer::class, $this->container->getDefinition('asset.css.optimizer')->getClass());
   }
 
 }
