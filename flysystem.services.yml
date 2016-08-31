@@ -22,3 +22,14 @@ services:
     class: Drupal\flysystem\PathProcessor\FlysystemPathProcessor
     tags:
       - { name: path_processor_inbound, priority: 400 }
+
+  flysystem.route_subscriber:
+    class: Drupal\flysystem\Routing\RouteSubscriber
+    tags:
+      - { name: event_subscriber }
+
+  flysystem.asset_copier:
+    class: Drupal\flysystem\AssetCopier
+    arguments: ['@lock', '@file_system', '@logger.channel.flysystem']
+    tags:
+      - { name: event_subscriber }

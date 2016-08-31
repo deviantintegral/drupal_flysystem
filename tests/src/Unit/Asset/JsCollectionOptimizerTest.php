@@ -65,17 +65,20 @@ class JsCollectionOptimizerTest extends UnitTestCase {
       'system.performance' => ['stale_file_threshold' => 0],
     ]));
 
+    $copier = $this->getMockBuilder('\Drupal\flysystem\AssetCopier')
+      ->disableOriginalConstructor()
+      ->getMock();
+
     \Drupal::setContainer($container);
 
     $grouper = $this->prophesize(AssetCollectionGrouperInterface::class);
-    $dumper = new AssetDumper();
+    $dumper = new AssetDumper($copier);
     $state = $this->getMock(StateInterface::class);
 
     $optimizer = new JsCollectionOptimizer($grouper->reveal(), new JsOptimizer(), $dumper, $state);
 
     $optimizer->deleteAll();
     $this->assertFalse(file_exists('vfs://flysystem/test.js'));
-
 
     file_put_contents('vfs://flysystem/test.js', 'asdfasdf');
     touch('vfs://flysystem/test.js', REQUEST_TIME - 1000);

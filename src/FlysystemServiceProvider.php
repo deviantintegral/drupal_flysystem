@@ -11,6 +11,7 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DependencyInjection\ServiceProviderInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\flysystem\Asset\SchemeExtensionTrait;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Flysystem dependency injection container.
@@ -72,7 +73,9 @@ class FlysystemServiceProvider implements ServiceProviderInterface {
 
     $container
       ->getDefinition('asset.' . $extension . '.dumper')
-      ->setClass('Drupal\flysystem\Asset\AssetDumper');
+      ->setClass('Drupal\flysystem\Asset\AssetDumper')
+      ->setArguments([new Reference('flysystem.asset_copier')]);
+
     $container
       ->getDefinition('asset.' . $extension . '.collection_optimizer')
       ->setClass('Drupal\flysystem\Asset\\' . ucfirst($extension) . 'CollectionOptimizer');
