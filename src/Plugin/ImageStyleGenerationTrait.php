@@ -4,6 +4,7 @@ namespace Drupal\flysystem\Plugin;
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\image\Entity\ImageStyle;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Helper trait for generating URLs from adapter plugins.
@@ -18,6 +19,10 @@ trait ImageStyleGenerationTrait {
    *
    * @return bool
    *   True on success, false on failure.
+   *
+   * @deprecated Adapters should use generateImageUrl() to enable non-blocking
+   * image uploads. Will be removed before Flysystem 8.x-1.0.
+   *
    */
   protected function generateImageStyle($target) {
     if (strpos($target, 'styles/') !== 0 || substr_count($target, '/') < 3) {
@@ -63,6 +68,26 @@ trait ImageStyleGenerationTrait {
     }
 
     return $success;
+  }
+
+  /**
+   * Return the external URL for a generated image.
+   *
+   * @param string $target
+   *   The target URI.
+   *
+   * @return string
+   *   The generated URL.
+   */
+  protected function generateImageUrl($target) {
+    list(, $style, $scheme, $file) = explode('/', $target, 4);
+    $args = [
+      'image_style' => $style,
+      'scheme' => $scheme,
+      'filepath' => $file,
+    ];
+
+    return \Drupal::urlGenerator()->generate('flysystem.image_stye_redirect.serve', $args, UrlGeneratorInterface::ABSOLUTE_URL);
   }
 
 }

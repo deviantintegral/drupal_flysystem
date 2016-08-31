@@ -18,7 +18,18 @@ services:
     class: Drupal\flysystem\FlysystemFactory
     arguments: ['@plugin.manager.flysystem', '@file_system', '@cache.flysystem', '@logger.channel.flysystem']
 
+  flysystem_image_style_copier:
+    class: Drupal\flysystem\ImageStyleCopier
+    arguments: ['@lock', '@file_system', '@logger.channel.image']
+    tags:
+      - { name: event_subscriber }
+
   path_processor.flysystem:
     class: Drupal\flysystem\PathProcessor\FlysystemPathProcessor
+    tags:
+      - { name: path_processor_inbound, priority: 400 }
+
+  path_processor.flysystem_redirect:
+    class: Drupal\flysystem\PathProcessor\FlysystemImageStyleRedirectProcessor
     tags:
       - { name: path_processor_inbound, priority: 400 }

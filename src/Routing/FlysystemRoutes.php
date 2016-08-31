@@ -100,7 +100,7 @@ class FlysystemRoutes implements ContainerInjectionInterface {
       );
 
       if ($this->moduleHandler->moduleExists('image')) {
-        // Public image route.
+        // Public image route for alternate public directories.
         $routes['flysystem.' . $scheme . '.style_public'] = new Route(
           '/' . $settings['config']['root'] . '/styles/{image_style}/' . $scheme,
           [
@@ -115,7 +115,7 @@ class FlysystemRoutes implements ContainerInjectionInterface {
     }
 
     if ($this->moduleHandler->moduleExists('image')) {
-      // Internal image rotue.
+      // Public image route that proxies the response through Drupal.
       $routes['flysystem.image_style'] = new Route(
         '/_flysystem/styles/{image_style}/{scheme}',
         [
@@ -124,6 +124,31 @@ class FlysystemRoutes implements ContainerInjectionInterface {
         [
           '_access' => 'TRUE',
           'scheme' => '^[a-zA-Z0-9+.-]+$',
+        ]
+      );
+
+      // Public image route that serves initially from Drupal, and then
+      // redirects to a remote URL when it's ready.
+      $routes['flysystem.image_stye_redirect'] = new Route(
+        "/_flysystem-style-redirect/{image_style}/{scheme}",
+        [
+          '_controller' => 'Drupal\flysystem\Controller\ImageStyleRedirectController::deliver',
+        ],
+        [
+          '_access' => 'TRUE',
+          'scheme' => '^[a-zA-Z0-9+.-]+$',
+        ]
+      );
+
+      $routes['flysystem.image_stye_redirect.serve'] = new Route(
+        "/_flysystem-style-redirect/{image_style}/{scheme}/{filepath}",
+        [
+          '_controller' => 'Drupal\flysystem\Controller\ImageStyleRedirectController::deliver',
+        ],
+        [
+          '_access' => 'TRUE',
+          'scheme' => '^[a-zA-Z0-9+.-]+$',
+          'filepath' => '.+',
         ]
       );
     }
