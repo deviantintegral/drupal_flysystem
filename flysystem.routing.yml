@@ -25,3 +25,10 @@ flysystem.config:
 
 route_callbacks:
   - 'Drupal\flysystem\Routing\FlysystemRoutes::routes'
+
+flysystem.temporary_assets:
+  path: '/_flysystem/asset-redirect'
+  defaults:
+    _controller: 'Drupal\flysystem\Controller\AssetDownloadController::download'
+  requirements:
+    _access: 'TRUE'
